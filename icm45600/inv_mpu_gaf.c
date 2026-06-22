@@ -423,7 +423,8 @@ int inv_mpu_gaf_enable(struct inv_mpu_state *st)
 	}
 
 	value |= REG_EDMP_APEX_EN1_GAF_EN_MASK |
-		 REG_EDMP_APEX_EN1_EDMP_ENABLE_MASK;
+		 REG_EDMP_APEX_EN1_EDMP_ENABLE_MASK |
+		 REG_EDMP_APEX_EN1_SOFT_HARD_IRON_CORR_EN_MASK;
 	status = inv_plat_single_write(st, REG_EDMP_APEX_EN1_DREG_BANK1, value);
 	if (status)
 		return status;

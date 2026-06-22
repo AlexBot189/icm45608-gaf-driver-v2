@@ -1,380 +1,150 @@
 /*
- * ________________________________________________________________________________________________________
- * Copyright © 2021 InvenSense Inc. All rights reserved.
  *
- * This software, related documentation and any modifications thereto (collectively “Software”) is subject
- * to InvenSense and its licensors' intellectual property rights under U.S. and international copyright
- * and other intellectual property rights laws.
+ * Copyright (c) [2024] by InvenSense, Inc.
+ * 
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * InvenSense and its licensors retain all intellectual property and proprietary rights in and to the Software
- * and any use, reproduction, disclosure or distribution of the Software without an express license agreement
- * from InvenSense is strictly prohibited.
- *
- * EXCEPT AS OTHERWISE PROVIDED IN A LICENSE AGREEMENT BETWEEN THE PARTIES, THE SOFTWARE IS
- * PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
- * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.
- * EXCEPT AS OTHERWISE PROVIDED IN A LICENSE AGREEMENT BETWEEN THE PARTIES, IN NO EVENT SHALL
- * INVENSENSE BE LIABLE FOR ANY DIRECT, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, OR ANY
- * DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
- * NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
- * OF THE SOFTWARE.
- *
- * ________________________________________________________________________________________________________
  */
 
-#ifndef __INV_IMU_EDMP_MEMMAP_H__
-#define __INV_IMU_EDMP_MEMMAP_H__
+#ifndef __INV_IMU_EDMP_APEX_MEMMAP_H__
+#define __INV_IMU_EDMP_APEX_MEMMAP_H__
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* ped_amp_th
+/* use_case_bitmask
  *
- * Threshold on the absolute value of the filtered accelerometer, above which a valid step will be counted.
- * Unit: LSB with 1 LSB = 1 g/225 from accel filtered value.
- * Range: [1006632 - 3019898]
- * Default value: 2080374
- * Recommendation: at lower value, smoother steps can be detected.
+ * ISR1 init request service ID depending on system usecase
+ * Set bit 1 for usecase which does not require GAF
+ * Set bit 3 for usecase which does not require Free-Fall
+ * Set bit 4 for usecase which does not require TAP
+ * Default: 0 (initialize all algo)
  */
-#define EDMP_PED_AMP_TH                                         0x3f0
-#define EDMP_PED_AMP_TH_SIZE                                    4
+#define EDMP_USE_CASE_BITMASK                                   0x5
+#define EDMP_USE_CASE_BITMASK_SIZE                              1
 
-/* ped_step_cnt_th
+/* ondemand_dynamic_service_request
  *
- * Minimum number of steps needed to be buffered before starting to increment step count in real time.
- * Unit: number of steps
- * Range: [0-15] 
- * Default value: 5
- * Recommendation: for a better rejection rate the value can be increased. Keep in mind that if the user does less steps that the value, these steps will not be counted.
+ * ISR1 on-demand service request ID
+ * Set bit 1 to request set GAF parameters
+ * Set bit 2 to request set GAF bias
+ * Default: 0 (no ISR1 service requested)
  */
-#define EDMP_PED_STEP_CNT_TH                                    0x3dc
-#define EDMP_PED_STEP_CNT_TH_SIZE                               2
+#define EDMP_ONDEMAND_DYNAMIC_SERVICE_REQUEST                   0x4
+#define EDMP_ONDEMAND_DYNAMIC_SERVICE_REQUEST_SIZE              1
 
-/* ped_prev_step_cnt_th
+/* ondemand_static_service_request
  *
- * Intermediate number of steps needed to be buffered waiting the internal counting reached the ped_step_cnt_th (when ped_prev_step_cnt_th is lower than ped_step_cnt_th).
- * Note: as soon as ped_step_cnt_th is reached ped_prev_step_cnt_th value is set to ped_step_cnt_th.
- * Unit: number of steps
- * Range: [0-15]
- * Default value: 5
- * Recommendation: set same value as ped_step_cnt_th.
+ * ISR2 on-demand service request ID
+ * Set bit 0 to request memset service
+ * Default: 0 (no ISR2 service requested)
  */
-#define EDMP_PED_PREV_STEP_CNT_TH                               0x352
-#define EDMP_PED_PREV_STEP_CNT_TH_SIZE                          2
+#define EDMP_ONDEMAND_STATIC_SERVICE_REQUEST                    0x118
+#define EDMP_ONDEMAND_STATIC_SERVICE_REQUEST_SIZE               4
 
-/* ped_step_det_th
+/* ondemand_memset_addr
  *
- * Minimum number of steps needed to be initially detected before starting to report instantaneous step events.
- * Unit: number of steps
- * Range: [0-7] 
- * Default value: 2
- * Recommendation: for a better rejection rate the value can be increased.
+ * Start address of RAM area to be written by EDMP when requested by memset static service.
  */
-#define EDMP_PED_STEP_DET_TH                                    0x3de
-#define EDMP_PED_STEP_DET_TH_SIZE                               2
+#define EDMP_ONDEMAND_MEMSET_ADDR                               0x11c
+#define EDMP_ONDEMAND_MEMSET_ADDR_SIZE                          2
 
-/* ped_sb_timer_th
+/* ondemand_memset_size
  *
- * Maximum permitted time between two consecutive steps.
- * While in the step buffer state, the step buffer count resets to 0 if a new step isnâ€™t detected for this amount of time (user is considered to have "stopped walking")
- * Unit: time in samples number
- * Range: [0 - 225] 
- * Default value: 150 for ODR = 50 Hz
- * Recommendation: it is linked to stop and go use case to avoid seeing the impact of pedo_step_cnt_thr and pedo_step_det_thr
+ * Length in bytes of RAM area to be written by EDMP when requested by memset static service.
  */
-#define EDMP_PED_SB_TIMER_TH                                    0x3e2
-#define EDMP_PED_SB_TIMER_TH_SIZE                               2
+#define EDMP_ONDEMAND_MEMSET_SIZE                               0x120
+#define EDMP_ONDEMAND_MEMSET_SIZE_SIZE                          2
 
-/* ped_hi_en_th
+/* ondemand_memset_value
  *
- * Threshold on signal's energy in frequency band corresponding to walking/running. 
- * Unit: LSB with 1 LSB = 1 g/225 from accel filtered value
- * Range: [2949120 - 5210112] 
- * Default value: 3506176
- * Recommendation: if some walking steps are classified as running, higher the value, if some running steps are classified as walking, lower the value
+ * Value to be written by EDMP to RAM area when requested by memset static service.
  */
-#define EDMP_PED_HI_EN_TH                                       0x3f8
-#define EDMP_PED_HI_EN_TH_SIZE                                  4
+#define EDMP_ONDEMAND_MEMSET_VALUE                              0x11e
+#define EDMP_ONDEMAND_MEMSET_VALUE_SIZE                         1
 
-/* ped_sensitivity_mode
+/* dmp_odr_last_init
  *
- * Set the sensitivity to low energy, 0/1 value. 1 is more sensitive to low energy steps
- * Unit: no unit
- * Range: [0 - 1] 
- * Default value: 0
- * Recommendation: to detect very slow walk (with a frequency lower that 1 Hz), value can be set to 1, warning the false detection on no-walking use case may increase.
+ * Encoded eDMP ODR value effective during last eDMP init request
+ * 0x1 for eDMP ODR 25Hz
+ * 0x2 for eDMP ODR 50Hz
+ * 0x8 for eDMP ODR 100Hz
+ * 0x80 for eDMP ODR 200Hz
+ * 0x8000 for eDMP ODR 400Hz
+ * 0x80000000 for eDMP ODR 800Hz
  */
-#define EDMP_PED_SENSITIVITY_MODE                               0x3ec
-#define EDMP_PED_SENSITIVITY_MODE_SIZE                          1
+#define EDMP_DMP_ODR_LAST_INIT                                  0x188
+#define EDMP_DMP_ODR_LAST_INIT_SIZE                             4
 
-/* ped_low_en_amp_th
+/* global_mounting_matrix
  *
- * Threshold on signal amplitude on filtered accelerometer to identify a valid step in slow walk mode.
- * Unit: LSB with 1 LSB = 1 g/225 from accel filtered value
- * Range: [1006632 - 3523215] 
- * Default value: 2684354
- * Recommendation: only used when sensitivity_mode is equal to 1 (slow walk), lower the value to detect smoother steps
+ * A q14 3x3 matrix applied to input accel and gyro data
+ * Default:Identity matrix being
+ * 0x4000   0      0  
+ *   0    0x4000   0 
+ *   0      0    0x4000
  */
-#define EDMP_PED_LOW_EN_AMP_TH                                  0x3e8
-#define EDMP_PED_LOW_EN_AMP_TH_SIZE                             4
-
-/* ped_step_cnt_buf1
- *
- * Number of steps done since the last init of the pedometer feature.
- * Filled in alternatively with ped_step_cnt_buf2.
- * Unit: number of steps
- */
-#define EDMP_PED_STEP_CNT_BUF1                                  0x9a
-#define EDMP_PED_STEP_CNT_BUF1_SIZE                             2
-
-/* ped_step_cnt_buf2
- *
- * Number of steps done since the last init of the pedometer feature.
- * Filled in alternatively with ped_step_cnt_buf1.
- * Unit: number of steps
- */
-#define EDMP_PED_STEP_CNT_BUF2                                  0x9c
-#define EDMP_PED_STEP_CNT_BUF2_SIZE                             2
-
-/* ped_step_cadence
- *
- * Instant step cadence measured by the algorithm
- * Unit: 4*number of samples between two consecutive steps. Cadency (step/s) = (ped_step_cadence / 4) / (pedometer_ ODR).
- */
-#define EDMP_PED_STEP_CADENCE                                   0x9f
-#define EDMP_PED_STEP_CADENCE_SIZE                              1
-
-/* ped_activity_class
- *
- * Activity classification of step detected
- * Unit: Enum: unknown (0), walk(1), run(2)
- */
-#define EDMP_PED_ACTIVITY_CLASS                                 0xa0
-#define EDMP_PED_ACTIVITY_CLASS_SIZE                            1
-
-/* tilt_wait_time
- *
- * The time during which the tilt gesture should be maintained to detect tilt. 
- * Unit: time in sample number
- * Range: [0 - 65536] 
- * Default value: 200 for ODR = 50 Hz, 100 for ODR = 25 Hz
- */
-#define EDMP_TILT_WAIT_TIME                                     0x188
-#define EDMP_TILT_WAIT_TIME_SIZE                                2
-
-/* tilt_reset_en
- *
- * Set 1 to reset tilt prior to any further tilt processing on next sensor data.
- */
-#define EDMP_TILT_RESET_EN                                      0x92
-#define EDMP_TILT_RESET_EN_SIZE                                 1
-
-/* quat_reset_en
- *
- * Set 1 to force reset 3-axis quaternion when next tilt reset is done. This is applicable only if tilt_reset_en is also set to 1.
- */
-#define EDMP_QUAT_RESET_EN                                      0x5c
-#define EDMP_QUAT_RESET_EN_SIZE                                 1
-
-/* smd_sensitivity
- *
- * Bit shift of the initial threshold of low value variance, representing the algorithm robustness to rejection use case. 
- * Unit: enum no unit
- * Range: [0 - 4] 
- * Default value: 0
- * Recommendation: 0 is the value corresponding to the better good detection rate in biking and transport use case.
- * Higher the value will decrease the biking and transport good detection rate, but it will also improve the performance in rejection.
- */
-#define EDMP_SMD_SENSITIVITY                                    0x412
-#define EDMP_SMD_SENSITIVITY_SIZE                               1
-
-/* basicsmd_win
- *
- * The window time in number of samples to wait continuous WOM before trigger SMD
- * Unit: time in sample number
- * Range: [25 - 500] 
- * Default value: 150
- * Recommended value at 50Hz = 150
- * Recommended value at 25Hz = 75
- */
-#define EDMP_BASICSMD_WIN                                       0x110
-#define EDMP_BASICSMD_WIN_SIZE                                  4
-
-/* basicsmd_win_wait
- *
- * The window time in number of samples before stop trigger SMD after WOM stop reported motion
- * Unit: time in sample number
- * Range: [25 - 500] 
- * Default value: 50
- * Recommended value at 50Hz = 50
- * Recommended value at 25Hz = 25
- */
-#define EDMP_BASICSMD_WIN_WAIT                                  0x114
-#define EDMP_BASICSMD_WIN_WAIT_SIZE                             4
-
-/* r2w_sleep_time_out
- *
- * Defines the duration after wake event to report sleep event no matter if position change or not 
- * Unit: time in ms (millisecond)
- * Range: [100 - 10000]
- * Default value: 640 (equivalent to 0.64s)
- */
-#define EDMP_R2W_SLEEP_TIME_OUT                                 0x21c
-#define EDMP_R2W_SLEEP_TIME_OUT_SIZE                            4
-
-/* r2w_sleep_gesture_delay
- *
- * Defines the minimal duration of sleep position before trigger the sleep event
- * Unit: time in ms (millisecond)
- * Range: [0 - 256]
- * Default value: 96 (equivalent to 0.096 s)
- */
-#define EDMP_R2W_SLEEP_GESTURE_DELAY                            0x220
-#define EDMP_R2W_SLEEP_GESTURE_DELAY_SIZE                       4
-
-/* r2w_mounting_matrix
- *
- * Mounting matrix to rotate data from chip frame to device frame
- * Unit: N/A
- * Range: 3 lower bits are use [b2 b1 b0]: when b2 = 1 swap X and Y, when b1 = 1 flip X sign, when b0 = 1 flip Y sign
- * Default value: 0 (chip frame aligned with android frame)
- */
-#define EDMP_R2W_MOUNTING_MATRIX                                0x224
-#define EDMP_R2W_MOUNTING_MATRIX_SIZE                           4
-
-/* r2w_gravity_filter_gain
- *
- * Mounting matrix to rotate data from chip frame to device frame
- * Unit: N/A
- * Range: 3 lower bits are use [b2 b1 b0]: when b2 = 1 swap X and Y, when b1 = 1 flip X sign, when b0 = 1 flip Y sign
- * Default value: 0 (chip frame aligned with android frame)
- */
-#define EDMP_R2W_GRAVITY_FILTER_GAIN                            0x22c
-#define EDMP_R2W_GRAVITY_FILTER_GAIN_SIZE                       4
-
-/* r2w_motion_thr_angle_cosine
- *
- * Set the minimal angle that needed to be applied to device to detect R2W
- * Unit: fixed point value q30 of cosine of the angle
- * Range: [130856211 - 1069655912], corresponding to angle between 5 and 85 degrees
- * Default value: 1046221864, corresponding to an angle of 13 degrees
- */
-#define EDMP_R2W_MOTION_THR_ANGLE_COSINE                        0x230
-#define EDMP_R2W_MOTION_THR_ANGLE_COSINE_SIZE                   4
-
-/* r2w_motion_thr_timer_fast
- *
- * Timer relative to the rapidity of the algorithm to trigger wake up when the orientation before motion is Y axis up (with less than 30Â° of inclination).
- * Unit: ms (no dependency on ODR, it is managed internally by the algo)
- * Range: [100 - 500]
- * Default value: 240
- */
-#define EDMP_R2W_MOTION_THR_TIMER_FAST                          0x234
-#define EDMP_R2W_MOTION_THR_TIMER_FAST_SIZE                     4
-
-/* r2w_motion_thr_timer_slow
- *
- * Timer relative to the rapidity of the algorithm to trigger wake up when the orientation before motion is over 30Â° on the Y axis
- * Unit: ms (no dependency on ODR, it is managed internally by the algo)
- * Range: [240- 1000]
- * Default value: 500
- */
-#define EDMP_R2W_MOTION_THR_TIMER_SLOW                          0x238
-#define EDMP_R2W_MOTION_THR_TIMER_SLOW_SIZE                     4
-
-/* r2w_motion_prev_gravity_timeout
- *
- * Time delay to update internal value of previous gravity when no motion is detected, longer time enables detection motion during slower gesture.
- * Unit: ms (no dependency on ODR, it is managed internally by the algo)
- * Range: [100 - 1000]
- * Default value: 300
- */
-#define EDMP_R2W_MOTION_PREV_GRAVITY_TIMEOUT                    0x23c
-#define EDMP_R2W_MOTION_PREV_GRAVITY_TIMEOUT_SIZE               4
-
-/* r2w_last_gravity_motion_timer
- *
- * Time delay to update the current gravity estimator when no motion is detected.
- * Unit: ms (no dependency on ODR, it is managed internally by the algo)
- * ODR dependency: No, despite it is a timer, the algorithm internally manages the ODR
- * Range: [100 - 1000]
- * Default value: 480
- */
-#define EDMP_R2W_LAST_GRAVITY_MOTION_TIMER                      0x240
-#define EDMP_R2W_LAST_GRAVITY_MOTION_TIMER_SIZE                 4
-
-/* r2w_last_gravity_timeout
- *
- * Time delay to update gravity in case motion is detected all the time, force to update gravity estimator even if the device is not stable.
- * Unit: ms (no dependency on ODR, it is managed internally by the algo)
- * Range: [1000 - 10000]
- * Default value: 2600
- */
-#define EDMP_R2W_LAST_GRAVITY_TIMEOUT                           0x244
-#define EDMP_R2W_LAST_GRAVITY_TIMEOUT_SIZE                      4
-
-/* r2w_gesture_validity_timeout
- *
- * Gesture validity timeout, if gesture is not completed in this timeout limit, gesture is invalid
- * Unit: ms (no dependency on ODR, it is managed internally by the algo)
- * Range: [100 - 1000]
- * Default value: 240
- */
-#define EDMP_R2W_GESTURE_VALIDITY_TIMEOUT                       0x248
-#define EDMP_R2W_GESTURE_VALIDITY_TIMEOUT_SIZE                  4
+#define EDMP_GLOBAL_MOUNTING_MATRIX                             0x1ac
+#define EDMP_GLOBAL_MOUNTING_MATRIX_SIZE                        18
 
 /* lowg_peak_th
  *
- * Sum of absolute accelerometer axis falls lowg_peak_th will potentially trigger the start of LowG state.
- * Unit: LSB with 1 LSB = 1g / 212
- * Range: [128 - 4096] 
- * Default value: 2048
+ * Threshold for accel values below which low-g state is detected.
+ * Unit: g in q12
+ * Range: [128 - 4096]
+ * Default: 2048
  */
-#define EDMP_LOWG_PEAK_TH                                       0x13c
+#define EDMP_LOWG_PEAK_TH                                       0x224
 #define EDMP_LOWG_PEAK_TH_SIZE                                  2
 
 /* lowg_peak_th_hyst
  *
- * Hysteresis added to the lowg_peak_th threshold to confirm the triggering of the LowG state.
- * Unit: LSB with 1 LSB = 1g / 212  
+ * Hysteresis value added to the low-g threshold after accel values get below threshold.
+ * Unit: g in q12
  * Range: [128 - 1024]
- * Default value: 128
+ * Default: 128
  */
-#define EDMP_LOWG_PEAK_TH_HYST                                  0x13e
+#define EDMP_LOWG_PEAK_TH_HYST                                  0x226
 #define EDMP_LOWG_PEAK_TH_HYST_SIZE                             2
 
 /* lowg_time_th
  *
- * The number of samples device should stay below (lowg_peak_th + lowg_peak_th_hyst) before LowG state is triggered.
- * Unit: time in samples number 
+ * Number of samples required to enter low-g state.
+ * Unit: time in samples number
  * Range: [1 - 300]
- * Default value: 13 (set for default ODR = 400 Hz, equivalent to 32 ms)
- * Recommended value at 800Hz = 26
- * Recommended value at 400Hz = 13
- * Recommended value at 200Hz = 7
+ * Default: 13 (set for default ODR = 800 Hz, equivalent to 16 ms)
  */
-#define EDMP_LOWG_TIME_TH                                       0x140
+#define EDMP_LOWG_TIME_TH                                       0x228
 #define EDMP_LOWG_TIME_TH_SIZE                                  2
 
 /* highg_peak_th
  *
- * Any of the absolute accelerometer axis surpasses highg_peak_th will potentially trigger the start of HighG state.
- * Unit : LSB with 1 LSB = 1g / 212 
+ * Threshold for accel values above which high-g state is detected.
+ * Unit: g in q12
  * Range: [1024 - 32768]
- * Default value: 29696
+ * Default: 29696
  */
-#define EDMP_HIGHG_PEAK_TH                                      0x130
+#define EDMP_HIGHG_PEAK_TH                                      0x218
 #define EDMP_HIGHG_PEAK_TH_SIZE                                 2
 
 /* highg_peak_th_hyst
  *
- * Hysteresis subtracted to the high_peak_th to confirm the triggering of the HighG state.
- * Unit: LSB with 1 LSB = 1g /212 
+ * Hysteresis value subtracted from the high-g threshold after exceeding it.
+ * Unit: g in q12
  * Range: [128 - 1024]
- * Default value: 128
+ * Default: 640
  */
-#define EDMP_HIGHG_PEAK_TH_HYST                                 0x132
+#define EDMP_HIGHG_PEAK_TH_HYST                                 0x21a
 #define EDMP_HIGHG_PEAK_TH_HYST_SIZE                            2
 
 /* highg_time_th
@@ -382,394 +152,825 @@ extern "C" {
  * The number of samples device should stay above (highg_peak_th + highg_peak_th_hyst) before HighG state is triggered.
  * Unit: time in samples number
  * Range: [1-300]
- * Default value: 1 (set for default ODR = 400 Hz, equivalent to 2.5 ms)
- * Recommended value at 800Hz = 1
- * Recommended value at 400Hz = 1
- * Recommended value at 200Hz = 1
+ * Default: 1 (set for default ODR = 800 Hz, equivalent to 1.25 ms)
  */
-#define EDMP_HIGHG_TIME_TH                                      0x134
+#define EDMP_HIGHG_TIME_TH                                      0x21c
 #define EDMP_HIGHG_TIME_TH_SIZE                                 2
 
 /* ff_min_duration
  *
- * Minimum duration between a LowG and HighG event to trigger freefall.
- * Unit: time in samples number 
+ * Minimum freefall duration. Shorter freefalls are ignored.
+ * Unit: time in samples number
  * Range: [4 - 420]
- * Default value: 57 (set for default ODR = 400 Hz, equivalent to 142 ms)
- * Recommended value at 800Hz = 114
- * Recommended value at 400Hz = 57
- * Recommended value at 200Hz = 28
+ * Default: 57 (set for default ODR = 400 Hz, equivalent to 142 ms)
  */
-#define EDMP_FF_MIN_DURATION                                    0x120
+#define EDMP_FF_MIN_DURATION                                    0x208
 #define EDMP_FF_MIN_DURATION_SIZE                               4
 
 /* ff_max_duration
  *
- * Maximum duration after LowG event to wait HighG event before reset freefall algorithm.
- * Unit: time in samples number 
+ * Maximum freefall duration. Longer freefalls are ignored.
+ * Unit: time in samples number
  * Range: [12 - 1040]
- * Default value: 285 (set for default ODR = 400 Hz, equivalent to 712 ms)
- * Recommended value at 800Hz = 570
- * Recommended value at 400Hz = 255
- * Recommended value at 200Hz = 142
+ * Default: 285 (set for default ODR = 400 Hz, equivalent to 712 ms)
  */
-#define EDMP_FF_MAX_DURATION                                    0x124
+#define EDMP_FF_MAX_DURATION                                    0x20c
 #define EDMP_FF_MAX_DURATION_SIZE                               4
 
 /* ff_debounce_duration
  *
- * Wait duration after freefall event detected (to avoid false freefall event), algorithm is in "pause" during this time.
+ * Period after a freefall is signaled during which a new freefall will not be detected. Prevents false detection due to bounces.
  * Unit: time in samples number
  * Range: [75 - 3000]
- * Default value: 800 (set for default ODR = 400 Hz, equivalent to 2 s)
- * Recommended value at 800Hz = 1600
- * Recommended value at 400Hz = 800
- * Recommended value at 200Hz = 400
+ * Default: 800 (set for default ODR = 800 Hz, equivalent to 1 s)
  */
-#define EDMP_FF_DEBOUNCE_DURATION                               0x128
+#define EDMP_FF_DEBOUNCE_DURATION                               0x210
 #define EDMP_FF_DEBOUNCE_DURATION_SIZE                          4
 
-/* ff_duration_buf1
+/* ff_duration
  *
  * Duration of the freefall.
- * Filled in alternatively with ff_duration_buf2.
- * Unit: time in sample number
+ * Unit: number of samples. Freefall duration in seconds / ACCEL_ODR_Hz
  */
-#define EDMP_FF_DURATION_BUF1                                   0x88
-#define EDMP_FF_DURATION_BUF1_SIZE                              2
+#define EDMP_FF_DURATION                                        0x202
+#define EDMP_FF_DURATION_SIZE                                   2
 
-/* ff_duration_buf2
+/* gaf_pdr_partition
  *
- * Duration of the freefall.
- * Filled in alternatively with ff_duration_buf1.
- * Unit: time in sample number
+ * GAF partition reconfiguration in case GAF PDR is not 50 Hz and mag ODR is not 50 Hz.
  */
-#define EDMP_FF_DURATION_BUF2                                   0x8a
-#define EDMP_FF_DURATION_BUF2_SIZE                              2
+#define EDMP_GAF_PDR_PARTITION                                  0x154
+#define EDMP_GAF_PDR_PARTITION_SIZE                             4
+
+/* gaf_init_status
+ *
+ * GAF initialization status. Set to 1 by eDMP once GAF initialization is done.
+ * Default: 0 (GAF initialization not performed)
+ */
+#define EDMP_GAF_INIT_STATUS                                    0x924
+#define EDMP_GAF_INIT_STATUS_SIZE                               1
+
+/* gaf_mode
+ *
+ * GAF configuration of eDMP system architecture.
+ * bit 0:
+ * - 0 if there is no mag (AG only)
+ * - 1 if there is ICT-1531x (calib mag will be run)
+ * bit 1:
+ * - 0 if there is no calib gyro expected (AM only)
+ * - 1 if there is calib gyro expected (calib gyro will be run)
+ * bit 2:
+ * - 0 if automatic MRM sequence is disabled
+ * - 1 if automatic MRM is run depending on mag data value
+ * bit 3
+ * - 0 if push in FIFO is to be made at GAF PDR (default)
+ * - 1 if no push in FIFO is to be done by DMP 
+ * Default: 0x03 (calibration mag, calibration gyro, no auto MRM, push in FIFO)
+ */
+#define EDMP_GAF_MODE                                           0x1be
+#define EDMP_GAF_MODE_SIZE                                      1
+
+/* gaf_ondemand_mrm_request
+ *
+ * Request MRM to be run during next eDMP execution. Set to not null value to request MRM.
+ * Default: 0x0
+ */
+#define EDMP_GAF_ONDEMAND_MRM_REQUEST                           0x1c1
+#define EDMP_GAF_ONDEMAND_MRM_REQUEST_SIZE                      1
+
+/* gaf_config_acc_odr_us
+ *
+ * GAF accelerometer input sensor data rate.
+ * Range: {1250;2500;5000;10000;20000}
+ * Unit: us
+ * Default: 10000
+ */
+#define EDMP_GAF_CONFIG_ACC_ODR_US                              0x288
+#define EDMP_GAF_CONFIG_ACC_ODR_US_SIZE                         4
+
+/* gaf_config_gyr_odr_us
+ *
+ * GAF gyroscope input sensor data rate.
+ * Range: {1250;2500;5000;10000;20000}
+ * Unit: us
+ * Default: 10000
+ */
+#define EDMP_GAF_CONFIG_GYR_ODR_US                              0x28c
+#define EDMP_GAF_CONFIG_GYR_ODR_US_SIZE                         4
+
+/* gaf_config_acc_pdr_us
+ *
+ * GAF accelerometer processing data rate, sensor data are averaged if sensor is faster than GAF accelerometer PDR.
+ * Range: {1250;2500;5000;10000;20000}
+ * Unit: us
+ * Default: 10000
+ */
+#define EDMP_GAF_CONFIG_ACC_PDR_US                              0x290
+#define EDMP_GAF_CONFIG_ACC_PDR_US_SIZE                         4
+
+/* gaf_config_gyr_pdr_us
+ *
+ * GAF gyroscope processing data rate, sensor data are averaged if sensor is faster than GAF gyroscope PDR. Corresponds to GAF output data rate.
+ * Range: {1250;2500;5000;10000;20000}
+ * Unit: us
+ * Default: 10000
+ */
+#define EDMP_GAF_CONFIG_GYR_PDR_US                              0x294
+#define EDMP_GAF_CONFIG_GYR_PDR_US_SIZE                         4
+
+/* gaf_config_stationary_angle_duration_us
+ *
+ * Duration of stationary detection.
+ * Unit: us
+ * Default: 500000 (0.5seconds)
+ */
+#define EDMP_GAF_CONFIG_STATIONARY_ANGLE_DURATION_US            0x298
+#define EDMP_GAF_CONFIG_STATIONARY_ANGLE_DURATION_US_SIZE       4
+
+/* gaf_config_stationary_angle_threshold_deg_q16
+ *
+ * Threshold on angular deviation for stationary detection.
+ * Unit: degree s32q16
+ * Default: 65536 (1 degree)
+ */
+#define EDMP_GAF_CONFIG_STATIONARY_ANGLE_THRESHOLD_DEG_Q16      0x29c
+#define EDMP_GAF_CONFIG_STATIONARY_ANGLE_THRESHOLD_DEG_Q16_SIZE 4
+
+/* gaf_config_fus_low_speed_drift_roll_pitch
+ *
+ * Gyroscope integration error related to bias precision. Higher value increases accel roll/pitch correction in steady state.
+ * Unit: LSB
+ * Default : 20
+ */
+#define EDMP_GAF_CONFIG_FUS_LOW_SPEED_DRIFT_ROLL_PITCH          0x2a0
+#define EDMP_GAF_CONFIG_FUS_LOW_SPEED_DRIFT_ROLL_PITCH_SIZE     4
+
+/* gaf_config_pll_clock_variation
+ *
+ * Error on the clock in same format as reg SW_PLL1_TRIM. Calculated as (actual_clk - target_clk) / target_clk * (2^7 - 1) / 5 * 100.
+ * Default : 0
+ */
+#define EDMP_GAF_CONFIG_PLL_CLOCK_VARIATION                     0x2ac
+#define EDMP_GAF_CONFIG_PLL_CLOCK_VARIATION_SIZE                1
+
+/* gaf_config_stationary_angle_enable
+ *
+ * Enable/disable stop integration of stationary angle.
+ * Default : 0
+ */
+#define EDMP_GAF_CONFIG_STATIONARY_ANGLE_ENABLE                 0x2ad
+#define EDMP_GAF_CONFIG_STATIONARY_ANGLE_ENABLE_SIZE            1
+
+/* gaf_config_run_spherical
+ *
+ * Enable fusion or only calibration : 0 to run only calibration steps, 1 to run also fusion/spherical steps.
+ * Default : 1
+ */
+#define EDMP_GAF_CONFIG_RUN_SPHERICAL                           0x2ae
+#define EDMP_GAF_CONFIG_RUN_SPHERICAL_SIZE                      1
+
+/* gaf_config_loose_gyr_cal_sample_num_log2
+ *
+ * Gyroscope calibration number of samples used to estimate metric1 and metric2, and minimum gyroscope calibration duration.
+ * Unit: number of samples in log2
+ * Range: [6 - 8]
+ * Default: 7 (so 2^7 = 128 samples)
+ */
+#define EDMP_GAF_CONFIG_LOOSE_GYR_CAL_SAMPLE_NUM_LOG2           0x6c8
+#define EDMP_GAF_CONFIG_LOOSE_GYR_CAL_SAMPLE_NUM_LOG2_SIZE      4
+
+/* gaf_config_golden_bias_timer
+ *
+ * Validity timer of the strict bias in sample number.
+ * Default: 1440000 (so 8 hours at 50Hz)
+ */
+#define EDMP_GAF_CONFIG_GOLDEN_BIAS_TIMER                       0x6c0
+#define EDMP_GAF_CONFIG_GOLDEN_BIAS_TIMER_SIZE                  4
+
+/* gaf_config_gyr_dt_us
+ *
+ * Gyro ODR corrected with PLL clock correction.
+ * Unit: us
+ * Default: 20000
+ */
+#define EDMP_GAF_CONFIG_GYR_DT_US                               0x4a0
+#define EDMP_GAF_CONFIG_GYR_DT_US_SIZE                          4
+
+/* gaf_config_mag_dt_us
+ *
+ * Mag ODR as configured for magnetometer-based fusion.
+ * Unit: us
+ * Default: 20000
+ */
+#define EDMP_GAF_CONFIG_MAG_DT_US                               0x4a8
+#define EDMP_GAF_CONFIG_MAG_DT_US_SIZE                          4
+
+/* gaf_config_magcal_dt_us
+ *
+ * Mag ODR as configured for magnetometer calibration. Must match gaf_config_mag_dt_us value at any time.
+ * Unit: us
+ * Default: 20000
+ */
+#define EDMP_GAF_CONFIG_MAGCAL_DT_US                            0x818
+#define EDMP_GAF_CONFIG_MAGCAL_DT_US_SIZE                       4
+
+/* gaf_config_mag_softiron_matrix
+ *
+ * A q30 3x3 matrix applied to input mag data
+ * Default:Identity matrix being
+ * 0x40000000      0           0
+ *     0       0x40000000      0
+ *     0           0       0x40000000
+ */
+#define EDMP_GAF_CONFIG_MAG_SOFTIRON_MATRIX                     0x264
+#define EDMP_GAF_CONFIG_MAG_SOFTIRON_MATRIX_SIZE                36
+
+/* gaf_config_fus_high_speed_drift
+ *
+ * Percentage of error (covering gyroscope sensitivity, timestamp and quantization) on gyroscope integration.
+ * Unit: LSB with 2^15 LSB = 1% error
+ * Default : 262144 (so 8% error)
+ */
+#define EDMP_GAF_CONFIG_FUS_HIGH_SPEED_DRIFT                    0x4f8
+#define EDMP_GAF_CONFIG_FUS_HIGH_SPEED_DRIFT_SIZE               4
+
+/* gaf_config_fus_low_speed_drift_yaw
+ *
+ * Gyroscope integration error related to bias precision. Higher value increases compass yaw correction in steady state.
+ * Unit: LSB
+ * Default : 20
+ */
+#define EDMP_GAF_CONFIG_FUS_LOW_SPEED_DRIFT_YAW                 0x2a4
+#define EDMP_GAF_CONFIG_FUS_LOW_SPEED_DRIFT_YAW_SIZE            4
+
+/* gaf_config_loose_gyr_cal_stationary_duration_us
+ *
+ * Duration for no motion gyroscope bias calibration.
+ * Unit: us
+ * Default value: 500000
+ */
+#define EDMP_GAF_CONFIG_LOOSE_GYR_CAL_STATIONARY_DURATION_US    0x5cc
+#define EDMP_GAF_CONFIG_LOOSE_GYR_CAL_STATIONARY_DURATION_US_SIZE 4
+
+/* gaf_config_loose_gyr_cal_threshold_metric1
+ *
+ * Stationary detection threshold of 1st metric for the loose bias calibration. Threshold is compare against absolute value of delta between current gyro value and last gyro value in an analysis window.
+ * Unit: 2000dps = 2^20
+ * Default value: 1200 (so 2.28dps)
+ */
+#define EDMP_GAF_CONFIG_LOOSE_GYR_CAL_THRESHOLD_METRIC1         0x5ec
+#define EDMP_GAF_CONFIG_LOOSE_GYR_CAL_THRESHOLD_METRIC1_SIZE    4
+
+/* gaf_config_loose_gyr_cal_threshold_metric2
+ *
+ * Stationary detection threshold of 2st metric for the loose bias calibration.
+ * Default value: 60000 (no unit).
+ */
+#define EDMP_GAF_CONFIG_LOOSE_GYR_CAL_THRESHOLD_METRIC2         0x5dc
+#define EDMP_GAF_CONFIG_LOOSE_GYR_CAL_THRESHOLD_METRIC2_SIZE    4
+
+/* gaf_config_strict_gyr_cal_threshold_metric1
+ *
+ * Stationary detection threshold of 1st metric for the strict bias calibration. Threshold is compare against absolute value of delta between current gyro value and last gyro value in an analysis window.
+ * Unit: 2000dps = 2^20
+ * Default value: 300 (so 0.57dps)
+ */
+#define EDMP_GAF_CONFIG_STRICT_GYR_CAL_THRESHOLD_METRIC1        0x6b8
+#define EDMP_GAF_CONFIG_STRICT_GYR_CAL_THRESHOLD_METRIC1_SIZE   4
+
+/* gaf_config_strict_gyr_cal_threshold_metric2
+ *
+ * Stationary detection threshold of 2st metric for the strict bias calibration.
+ * Default value: 400 (no unit)
+ */
+#define EDMP_GAF_CONFIG_STRICT_GYR_CAL_THRESHOLD_METRIC2        0x6bc
+#define EDMP_GAF_CONFIG_STRICT_GYR_CAL_THRESHOLD_METRIC2_SIZE   4
+
+/* gaf_config_gyr_bias_reject_th
+ *
+ * Gyro bias rejection threshold above which device is considered as moving. Threshold is compare against absolute value of delta between current estimated gyro bias and last estimated gyro bias in an analysis window.
+ * Unit: 2000dps = 2^30.
+ * Default value: 3650722 (so 6.8dps)
+ */
+#define EDMP_GAF_CONFIG_GYR_BIAS_REJECT_TH                      0x5e0
+#define EDMP_GAF_CONFIG_GYR_BIAS_REJECT_TH_SIZE                 4
+
+/* gaf_config_acc_filtering_Npoints_log2
+ *
+ * Accelerometer filtering mean value.
+ * Unit: sample number in log2
+ * Default: 5 (so 32 samples)
+ */
+#define EDMP_GAF_CONFIG_ACC_FILTERING_NPOINTS_LOG2              0x6b4
+#define EDMP_GAF_CONFIG_ACC_FILTERING_NPOINTS_LOG2_SIZE         4
+
+/* gaf_config_acc_square_sin_angle_motion_detect_th
+ *
+ * Square of sinus on angle threshold to reject gyroscope calibration.
+ * Unit: (sin(theta)2)*225
+ * Default: 4318 (so 0.65 degree)
+ */
+#define EDMP_GAF_CONFIG_ACC_SQUARE_SIN_ANGLE_MOTION_DETECT_TH   0x6b0
+#define EDMP_GAF_CONFIG_ACC_SQUARE_SIN_ANGLE_MOTION_DETECT_TH_SIZE 4
+
+/* gaf_config_golden_bias_temperature_validity
+ *
+ * Validity temperature variation of the strict bias.
+ * Unit: degree C s32q16
+ * Default: 983040 (so 15 degree C)
+ */
+#define EDMP_GAF_CONFIG_GOLDEN_BIAS_TEMPERATURE_VALIDITY        0x6c4
+#define EDMP_GAF_CONFIG_GOLDEN_BIAS_TEMPERATURE_VALIDITY_SIZE   4
+
+/* gaf_config_fus_measurement_covariance_acc
+ *
+ * Accelerometer measurement covariance.
+ * Unit: g^2 s32q15
+ * Default: 32768 (so 0.5g^2)
+ */
+#define EDMP_GAF_CONFIG_FUS_MEASUREMENT_COVARIANCE_ACC          0x4d8
+#define EDMP_GAF_CONFIG_FUS_MEASUREMENT_COVARIANCE_ACC_SIZE     4
+
+/* gaf_config_fus_acceleration_rejection
+ *
+ * Linear acceleration rejection.
+ * Unit: m/s^2 s32q30
+ * Range: [0 - 1073741824]
+ * Default: 1073741824 (so 1.0, being maximum rejection)
+ */
+#define EDMP_GAF_CONFIG_FUS_ACCELERATION_REJECTION              0x4f4
+#define EDMP_GAF_CONFIG_FUS_ACCELERATION_REJECTION_SIZE         4
+
+/* gaf_saved_acc_bias_1g_q16
+ *
+ * Accelerometer bias to start algorithm with (one value per axis).
+ * Unit: g in s32q16
+ * Default: 0;0;0
+ */
+#define EDMP_GAF_SAVED_ACC_BIAS_1G_Q16                          0x8c8
+#define EDMP_GAF_SAVED_ACC_BIAS_1G_Q16_SIZE                     12
+
+/* gaf_saved_acc_accuracy
+ *
+ * Accelerometer accuracy from 0 (non calibrated) to 3 (well calibrated) to start algorithm with.
+ * Range : [0 - 3]
+ * Default: 0
+ */
+#define EDMP_GAF_SAVED_ACC_ACCURACY                             0x923
+#define EDMP_GAF_SAVED_ACC_ACCURACY_SIZE                        1
+
+/* gaf_gyr_bias_dps_q12
+ *
+ * Gyroscope bias to start algorithm with (one value per axis), also acts as latest gyroscope bias computed value to be saved.
+ * Unit: dps in s32q12
+ * Default: 0;0;0
+ */
+#define EDMP_GAF_GYR_BIAS_DPS_Q12                               0x6cc
+#define EDMP_GAF_GYR_BIAS_DPS_Q12_SIZE                          12
+
+/* gaf_read_gyr_accuracy
+ *
+ * Latest gyroscope accuracy computed to be saved.
+ * Range : [0 - 3]
+ * Default: 0
+ */
+#define EDMP_GAF_READ_GYR_ACCURACY                              0x6e4
+#define EDMP_GAF_READ_GYR_ACCURACY_SIZE                         4
+
+/* gaf_saved_gyr_accuracy
+ *
+ * Gyroscope accuracy from 0 (non calibrated) to 3 (well calibrated) to start algorithm with.
+ * Range : [0 - 3]
+ * Default: 0
+ */
+#define EDMP_GAF_SAVED_GYR_ACCURACY                             0x5bc
+#define EDMP_GAF_SAVED_GYR_ACCURACY_SIZE                        4
+
+/* gaf_gyr_bias_temperature_deg_q16
+ *
+ * Temperature to start algorithm with, also acts as latest temperature associated with computed gyro bias.
+ * Unit: degree C in s32q16
+ * Default: 0
+ */
+#define EDMP_GAF_GYR_BIAS_TEMPERATURE_DEG_Q16                   0x6a0
+#define EDMP_GAF_GYR_BIAS_TEMPERATURE_DEG_Q16_SIZE              4
+
+/* gaf_saved_mag_bias_ut_q16
+ *
+ * Magnetometer bias to start algorithm with (one value per axis).
+ * Unit: uT in s32q16
+ * Default: 0;0;0
+ */
+#define EDMP_GAF_SAVED_MAG_BIAS_UT_Q16                          0x774
+#define EDMP_GAF_SAVED_MAG_BIAS_UT_Q16_SIZE                     12
+
+/* gaf_read_mag_bias_ut_q16
+ *
+ * Latest magnetometer bias computed to be saved (one value per axis), any new mag bias must also be applied in this RAM area.
+ * Unit: uT in s32q16
+ * Default: 0;0;0
+ */
+#define EDMP_GAF_READ_MAG_BIAS_UT_Q16                           0x974
+#define EDMP_GAF_READ_MAG_BIAS_UT_Q16_SIZE                      12
+
+/* gaf_read_mag_accuracy
+ *
+ * Latest magnetometer accuracy from 0 (non calibrated) to 3 (well calibrated) to be saved.
+ * Range : [0 - 3]
+ * Default: 0
+ */
+#define EDMP_GAF_READ_MAG_ACCURACY                              0x981
+#define EDMP_GAF_READ_MAG_ACCURACY_SIZE                         1
+
+/* gaf_saved_mag_accuracy
+ *
+ * Magnetometer accuracy from 0 (non calibrated) to 3 (well calibrated) to start algorithm with.
+ * Range : [0 - 3]
+ * Default: 0
+ */
+#define EDMP_GAF_SAVED_MAG_ACCURACY                             0x770
+#define EDMP_GAF_SAVED_MAG_ACCURACY_SIZE                        4
+
+/* gaf_saved_mag_accuracy_covariance
+ *
+ * Magnetometer maximum covariance inherited from new mag accuracy to be applied.
+ * Range : {2499 for accuracy 3, 4999 for accuracy 2, 9999 for accuracy 1, 500000 for accuracy 0}
+ * Default: 500000
+ */
+#define EDMP_GAF_SAVED_MAG_ACCURACY_COVARIANCE                  0x76c
+#define EDMP_GAF_SAVED_MAG_ACCURACY_COVARIANCE_SIZE             4
+
+/* gaf_config_fus_measurement_covariance_mag
+ *
+ * Magnetometer measurement covariance.
+ * Unit: uT^2 s32q16
+ * Default: 65536 (so 1.0uT^2)
+ */
+#define EDMP_GAF_CONFIG_FUS_MEASUREMENT_COVARIANCE_MAG          0x4b8
+#define EDMP_GAF_CONFIG_FUS_MEASUREMENT_COVARIANCE_MAG_SIZE     4
+
+/* gaf_config_fus_mag_anomaly_rejection
+ *
+ * Magnetometer anomalies rejection.
+ * Unit: uT^2 s32q30
+ * Default: 1073741824 (so 1.0uT^2)
+ */
+#define EDMP_GAF_CONFIG_FUS_MAG_ANOMALY_REJECTION               0x4bc
+#define EDMP_GAF_CONFIG_FUS_MAG_ANOMALY_REJECTION_SIZE          4
+
+/* gaf_config_thresh_yaw_stop_convergence
+ *
+ * Parameter to stop yaw error correction when value to correct is lower than threshold.
+ * Unit: rad s32q30
+ * Default: -1 (deactivated feature)
+ */
+#define EDMP_GAF_CONFIG_THRESH_YAW_STOP_CONVERGENCE             0x4d0
+#define EDMP_GAF_CONFIG_THRESH_YAW_STOP_CONVERGENCE_SIZE        4
+
+/* gaf_config_thresh_yaw_smooth_convergence
+ *
+ * Parameter to control yaw error correction speed as a percentage of the gyro speed.
+ * Unit: percentage in s32q15
+ * Default: -1 (deactivated feature)
+ */
+#define EDMP_GAF_CONFIG_THRESH_YAW_SMOOTH_CONVERGENCE           0x4d4
+#define EDMP_GAF_CONFIG_THRESH_YAW_SMOOTH_CONVERGENCE_SIZE      4
+
+/* gaf_config_mag_thr_huge_disturbance
+ *
+ * Huge disturbance threshold to reset the algorithm.
+ * Unit: uT in s32q11
+ * Default: 409600 (200 uT)
+ */
+#define EDMP_GAF_CONFIG_MAG_THR_HUGE_DISTURBANCE                0x820
+#define EDMP_GAF_CONFIG_MAG_THR_HUGE_DISTURBANCE_SIZE           4
+
+/* gaf_config_mag_thr_anomaly_radius
+ *
+ * Difference between current radius and measurement to switch to disturbed state.
+ * Unit: uT in s32q11
+ * Default: 30720 (15 uT)
+ */
+#define EDMP_GAF_CONFIG_MAG_THR_ANOMALY_RADIUS                  0x824
+#define EDMP_GAF_CONFIG_MAG_THR_ANOMALY_RADIUS_SIZE             4
+
+/* gaf_config_mag_thr_select_angle
+ *
+ * Minimum angular variation between 2 consecutive measurements (using gyro).
+ * Unit: s32q30
+ * Default: 1050277989 (cos(12deg))
+ */
+#define EDMP_GAF_CONFIG_MAG_THR_SELECT_ANGLE                    0x828
+#define EDMP_GAF_CONFIG_MAG_THR_SELECT_ANGLE_SIZE               4
+
+/* gaf_config_mag_thr_select_distance_gyro
+ *
+ * Minimum distance variation between 2 consecutive measurements (using gyro).
+ * Unit: uT in s32q11
+ * Default: 10240 (5uT)
+ */
+#define EDMP_GAF_CONFIG_MAG_THR_SELECT_DISTANCE_GYRO            0x82c
+#define EDMP_GAF_CONFIG_MAG_THR_SELECT_DISTANCE_GYRO_SIZE       4
+
+/* gaf_config_mag_thr_select_distance_nogyro
+ *
+ * Minimum distance variation between 2 consecutive measurements (not using gyro).
+ * Unit: uT in s32q11
+ * Default: 30720 (15uT)
+ */
+#define EDMP_GAF_CONFIG_MAG_THR_SELECT_DISTANCE_NOGYRO          0x830
+#define EDMP_GAF_CONFIG_MAG_THR_SELECT_DISTANCE_NOGYRO_SIZE     4
+
+/* gaf_config_mag_q0_standalone
+ *
+ * Magnetometer calibration model covariance.
+ * Default: 3
+ */
+#define EDMP_GAF_CONFIG_MAG_Q0_STANDALONE                       0x834
+#define EDMP_GAF_CONFIG_MAG_Q0_STANDALONE_SIZE                  4
+
+/* gaf_config_mag_r0_standalone
+ *
+ * Magnetometer calibration measurement covariance.
+ * Default: 400000
+ */
+#define EDMP_GAF_CONFIG_MAG_R0_STANDALONE                       0x838
+#define EDMP_GAF_CONFIG_MAG_R0_STANDALONE_SIZE                  4
+
+/* gaf_config_mag_q0_assisted
+ *
+ * Magnetometer calibration model covariance for gyro assisted model.
+ * Default: 1
+ */
+#define EDMP_GAF_CONFIG_MAG_Q0_ASSISTED                         0x83c
+#define EDMP_GAF_CONFIG_MAG_Q0_ASSISTED_SIZE                    4
+
+/* gaf_config_mag_r0_assisted
+ *
+ * Magnetometer calibration measurement covariance for gyro assisted model.
+ * Default: 5000
+ */
+#define EDMP_GAF_CONFIG_MAG_R0_ASSISTED                         0x840
+#define EDMP_GAF_CONFIG_MAG_R0_ASSISTED_SIZE                    4
+
+/* gaf_config_mag_thr_max_radius_jump
+ *
+ * Maximum radius jump between 2 solutions.
+ * Unit: uT in s32q11
+ * Default: 40960 (20uT)
+ */
+#define EDMP_GAF_CONFIG_MAG_THR_MAX_RADIUS_JUMP                 0x844
+#define EDMP_GAF_CONFIG_MAG_THR_MAX_RADIUS_JUMP_SIZE            4
+
+/* gaf_config_mag_thr_max_radius
+ *
+ * Maximum field radius.
+ * Unit: uT in s32q11
+ * Default: 256000 (125uT)
+ */
+#define EDMP_GAF_CONFIG_MAG_THR_MAX_RADIUS                      0x848
+#define EDMP_GAF_CONFIG_MAG_THR_MAX_RADIUS_SIZE                 4
+
+/* gaf_config_mag_thr_min_radius
+ *
+ * Minimum field radius.
+ * Unit: uT in s32q11
+ * Default: 36864 (18uT)
+ */
+#define EDMP_GAF_CONFIG_MAG_THR_MIN_RADIUS                      0x84c
+#define EDMP_GAF_CONFIG_MAG_THR_MIN_RADIUS_SIZE                 4
+
+/* gaf_config_mag_thr_lock_acc
+ *
+ * Threshold of steady accelerometer.
+ * Default: -1 (Disable the Lock mode feature)
+ */
+#define EDMP_GAF_CONFIG_MAG_THR_LOCK_ACC                        0x4c4
+#define EDMP_GAF_CONFIG_MAG_THR_LOCK_ACC_SIZE                   4
+
+/* gaf_config_mag_calibration_condition
+ *
+ * Control if we check additional condition on covariance in magnetometer calibration.
+ * Default: 1
+ */
+#define EDMP_GAF_CONFIG_MAG_CALIBRATION_CONDITION               0x850
+#define EDMP_GAF_CONFIG_MAG_CALIBRATION_CONDITION_SIZE          2
+
+/* sif_time_feas_config
+ *
+ * Structure member of the SIF configuration generated with TDK SIF software tools. It shall be loaded as-is based on TDK recommendation.
+ */
+#define EDMP_SIF_TIME_FEAS_CONFIG                               0x9dc
+#define EDMP_SIF_TIME_FEAS_CONFIG_SIZE                          2
+
+/* sif_filter
+ *
+ * Structure member of the SIF filter configuration generated with TDK SIF software tools. It shall be loaded as-is based on TDK recommendation.
+ */
+#define EDMP_SIF_FILTER                                         0xa5c
+#define EDMP_SIF_FILTER_SIZE                                    76
+
+/* sif_cconfig
+ *
+ * Structure member of the SIF filter configuration generated with TDK SIF software tools. It shall be loaded as-is based on TDK recommendation.
+ */
+#define EDMP_SIF_CCONFIG                                        0xa34
+#define EDMP_SIF_CCONFIG_SIZE                                   12
+
+/* sif_tconfig
+ *
+ * Structure member of the SIF filter configuration generated with TDK SIF software tools. It shall be loaded as-is based on TDK recommendation.
+ */
+#define EDMP_SIF_TCONFIG                                        0xa40
+#define EDMP_SIF_TCONFIG_SIZE                                   24
+
+/* sif_tree_thresholds
+ *
+ * Structure member of the SIF model Decision Tree generated with TDK SIF software tools. It shall be loaded as-is based on TDK recommendation.
+ */
+#define EDMP_SIF_TREE_THRESHOLDS                                0x138c
+#define EDMP_SIF_TREE_THRESHOLDS_SIZE                           2
+
+/* sif_tree_featureids
+ *
+ * Structure member of the SIF model Decision Tree generated with TDK SIF software tools. It shall be loaded as-is based on TDK recommendation.
+ */
+#define EDMP_SIF_TREE_FEATUREIDS                                0x158a
+#define EDMP_SIF_TREE_FEATUREIDS_SIZE                           1
+
+/* sif_tree_nextnoderight
+ *
+ * Structure member of the SIF model Decision Tree generated with TDK SIF software tools. It shall be loaded as-is based on TDK recommendation.
+ */
+#define EDMP_SIF_TREE_NEXTNODERIGHT                             0x1689
+#define EDMP_SIF_TREE_NEXTNODERIGHT_SIZE                        1
+
+/* sif_tree_thresholdsshift
+ *
+ * Structure member of the SIF model Decision Tree generated with TDK SIF software tools. It shall be loaded as-is based on TDK recommendation.
+ */
+#define EDMP_SIF_TREE_THRESHOLDSSHIFT                           0x1788
+#define EDMP_SIF_TREE_THRESHOLDSSHIFT_SIZE                      1
+
+/* sif_pdr_partition
+ *
+ * SIF partition reconfiguration in case SIF PDR is not 50 Hz.
+ */
+#define EDMP_SIF_PDR_PARTITION                                  0x138
+#define EDMP_SIF_PDR_PARTITION_SIZE                             4
+
+/* sif_class_index
+ *
+ * Index of SIF predicted gesture class.
+ */
+#define EDMP_SIF_CLASS_INDEX                                    0x9f4
+#define EDMP_SIF_CLASS_INDEX_SIZE                               2
 
 /* tap_min_jerk
  *
  * The minimal value of jerk to be considered as a tap candidate.
- * Unit: LSB with 1 LSB = 1g /26 (of the jerk value)
- * Range: [0 - 64]
- * Default value: 18 corresponding to 0.28 g
+ * Unit: LSB with 1 LSB = 1g / 2^12 (of the jerk value)
+ * Range: [0 - 16384]
+ * Default: 4608 (equivalent to 1.125 g) 
  */
-#define EDMP_TAP_MIN_JERK                                       0x193
-#define EDMP_TAP_MIN_JERK_SIZE                                  1
+#define EDMP_TAP_MIN_JERK                                       0x230
+#define EDMP_TAP_MIN_JERK_SIZE                                  2
 
 /* tap_tmax
  *
- * The minimal value of jerk to be considered as a tap candidate.
- * Unit: LSB with 1 LSB = 1g /26 (of the jerk value)
- * Range: [0 - 64]
- * Default value: 18 corresponding to 0.28 g
+ * Size of the analysis window to detect tap events (single, double or triple tap)
+ * Unit: time in sample number
+ * Range: [49 - 496]
+ * Default : 198 (set for default ODR = 400 Hz, equivalent to 0.495 s)
  */
-#define EDMP_TAP_TMAX                                           0x190
+#define EDMP_TAP_TMAX                                           0x232
 #define EDMP_TAP_TMAX_SIZE                                      2
 
 /* tap_tmin
  *
- * Single tap window, sub-windows within Tmax to detect single-tap event. For example:
- * 0.125 s: 24 for 200 Hz, 48 for 400 Hz, 96 for 800 Hz
- * 0.1406 s: 27 for 200 Hz, 54 for 400 Hz, 108 for 800 Hz
- * 0.1563 s: 30 for 200 Hz, 60 for 400 Hz, 120 for 800 Hz
- * 0.1719 s: 32 for 200 Hz, 66 for 400 Hz, 132 for 800 Hz
- * 0.18755 s: 37 for 200 Hz, 74 for 400 Hz, 148 for 800 Hz
- * 0.20319 s: 40 for 200 Hz, 80 for 400 Hz, 160 for 800 Hz
- * 0.21883 s: 43 for 200 Hz, 86 for 400 Hz, 172 for 800 Hz
- * 0.23447 s: 46 for 200 Hz, 92 for 400 Hz, 184 for 800 Hz
+ * Single tap window, sub-windows within Tmax to detect single-tap event.
  * Unit: time in sample number
- * Default value: 132 at 800Hz, representing 0.1719 s
+ * Range: [24 - 184]
+ * Default: 66 (set for default ODR = 400 Hz, equivalent to 0.165 s)
  */
-#define EDMP_TAP_TMIN                                           0x192
+#define EDMP_TAP_TMIN                                           0x234
 #define EDMP_TAP_TMIN_SIZE                                      1
 
 /* tap_max_peak_tol
  *
  * Maximum peak tolerance is the percentage of pulse amplitude to get the smudge threshold for rejection.
- * 1: 12.5 %
- * 2: 25.0 %
- * 3: 37.5 %
- * 4: 50.0 %
- * Unit: enum
- * Default value: 2
+ * Unit: N/A
+ * Range: [1 (12.5%) 2 (25.0%) 3 (37.5%) 4 (50.0 %)]
+ * Default: 2
  */
-#define EDMP_TAP_MAX_PEAK_TOL                                   0x195
+#define EDMP_TAP_MAX_PEAK_TOL                                   0x236
 #define EDMP_TAP_MAX_PEAK_TOL_SIZE                              1
 
 /* tap_smudge_reject_thr
  *
- * Maximum peak tolerance is the percentage of pulse amplitude to get the smudge threshold for rejection.
- * 1: 12.5 %
- * 2: 25.0 %
- * 3: 37.5 %
- * 4: 50.0 %
- * Unit: enum
- * Default value: 2
+ * Max acceptable number of samples (jerk value) over tap_max_peak_tol during the Tmin window. Over this value, Tap event is rejected
+ * unit: time in number of samples
+ * range: [13 - 92]
+ * Default: 34 (set for default ODR = 400 Hz, equivalent to 0.085 s)
  */
-#define EDMP_TAP_SMUDGE_REJECT_THR                              0x194
+#define EDMP_TAP_SMUDGE_REJECT_THR                              0x235
 #define EDMP_TAP_SMUDGE_REJECT_THR_SIZE                         1
 
 /* tap_tavg
  *
  * Energy measurement window size to determine the tap axis associated with the 1st tap.
  * Unit: time in sample number
- * Range: [1 â€“ 2 â€“ 4 â€“ 8]
- * Default value: 8
+ * Range: [1 ; 2 ; 4 ; 8]
+ * Default: 8
+ * 
  */
-#define EDMP_TAP_TAVG                                           0x196
+#define EDMP_TAP_TAVG                                           0x237
 #define EDMP_TAP_TAVG_SIZE                                      1
+
+/* tap_odr
+ *
+ * TAP execution ODR:
+ * 0: 200Hz, 1: 400Hz, 2: 800Hz.
+ * Unit: N/A
+ * Range: [0 ; 1 ; 2]
+ * Default: 1 (400Hz)
+ * 
+ */
+#define EDMP_TAP_ODR                                            0x238
+#define EDMP_TAP_ODR_SIZE                                       1
+
+/* tap_max
+ *
+ * Maximal number of tap quantity detected to be valid.
+ * Unit: N/A
+ * Range: [1 (single) ; 2 (double) ; 3 (triple)]
+ * Default: 2 (double tap)
+ * 
+ */
+#define EDMP_TAP_MAX                                            0x239
+#define EDMP_TAP_MAX_SIZE                                       1
+
+/* tap_min
+ *
+ * Minimal number of tap quantity detected to be valid.
+ * Unit: N/A
+ * Range: [1 (single) ; 2 (double) ; 3 (triple)]
+ * Default: 2 (double tap)
+ * 
+ */
+#define EDMP_TAP_MIN                                            0x23a
+#define EDMP_TAP_MIN_SIZE                                       1
 
 /* tap_num
  *
- * Enum of the tap type.
- * Unit: enum,  0: no tap, 1: single tap, 2: double tap.
+ * type of the last reported TAP event:
+ * 0: no tap, 1: single tap, 2: double tap, 3:triple tap
  */
-#define EDMP_TAP_NUM                                            0x8d
+#define EDMP_TAP_NUM                                            0x7
 #define EDMP_TAP_NUM_SIZE                                       1
 
 /* tap_axis
  *
  * Indicate the axis of the tap in the device frame
- * Unit: enum, 0: ax, 1: ay, 2: az.
+ * 0: ax, 1: ay, 2: az
  */
-#define EDMP_TAP_AXIS                                           0x8e
+#define EDMP_TAP_AXIS                                           0x8
 #define EDMP_TAP_AXIS_SIZE                                      1
 
 /* tap_dir
  *
  * Indicate the direction of the tap in the device frame
- * Unit: enum, 0: positive, 1: negative
+ * 0: positive, 1: negative
  */
-#define EDMP_TAP_DIR                                            0x8f
+#define EDMP_TAP_DIR                                            0x9
 #define EDMP_TAP_DIR_SIZE                                       1
 
 /* double_tap_timing
  *
- * Indicate in case of double tap, the sample count of the second pulse detected in the detection window
- * Unit: time in sample number
+ * In case of double tap, indicate the sample count between the two detected pulses. Double tap timing in seconds is double_tap_timing / TAP_ODR in Hz.
  */
-#define EDMP_DOUBLE_TAP_TIMING                                  0x90
-#define EDMP_DOUBLE_TAP_TIMING_SIZE                             1
+#define EDMP_DOUBLE_TAP_TIMING                                  0x260
+#define EDMP_DOUBLE_TAP_TIMING_SIZE                             2
 
-/* soft_iron_sensitivity_matrix
+/* triple_tap_timing
  *
- * Input 3x3 calibration matrix in q14 format applied to uncalib data.
+ * In case of triple tap, indicate the sample count between the first and third detected pulses. Triple tap timing in seconds is triple_tap_timing / TAP_ODR in Hz.
  */
-#define EDMP_SOFT_IRON_SENSITIVITY_MATRIX                       0x490
-#define EDMP_SOFT_IRON_SENSITIVITY_MATRIX_SIZE                  36
-
-/* hard_iron_offset
- *
- * 3-dimension vector that is removed to magnetometer data.
- */
-#define EDMP_HARD_IRON_OFFSET                                   0x4b4
-#define EDMP_HARD_IRON_OFFSET_SIZE                              12
-
-/* es0_compass_en
- *
- * Set 1 for compass support with es0, for other external sensors with es0, set 0.
- */
-#define EDMP_ES0_COMPASS_EN                                     0xb9
-#define EDMP_ES0_COMPASS_EN_SIZE                                1
-
-/* es_power_mode
- *
- * Set 1 for possibility of power savings when APEX features utilization is minimal.
- * Set 0 when APEX features utilization is at maximum.
- */
-#define EDMP_ES_POWER_MODE                                      0xba
-#define EDMP_ES_POWER_MODE_SIZE                                 1
-
-/* es_ram_image_en
- *
- * Set 1 to load device specific RAM image for external sensor support, otherwise set 0
- */
-#define EDMP_ES_RAM_IMAGE_EN                                    0xb6
-#define EDMP_ES_RAM_IMAGE_EN_SIZE                               1
+#define EDMP_TRIPLE_TAP_TIMING                                  0x262
+#define EDMP_TRIPLE_TAP_TIMING_SIZE                             2
 
 /* power_save_time
  *
- * The time (in sample number) after which eDMP goes in power save mode.
+ * Time of inactivity after which eDMP goes in power save mode.
  * Unit: time in sample number
  * Range: [0 - 4294967295] 
  * Default value: 6400
  */
-#define EDMP_POWER_SAVE_TIME                                    0xc4
+#define EDMP_POWER_SAVE_TIME                                    0x40
 #define EDMP_POWER_SAVE_TIME_SIZE                               4
-
-/* stc_results
- *
- * Results/status from self-test/self-cal run
- * bit0: AX Self-test result (0:pass 1:fail)
- * bit1: AY Self-test result (0:pass 1:fail)
- * bit2: AZ Self-test result (0:pass 1:fail)
- * bit3: GX Self-test result (0:pass 1:fail)
- * bit4: GY Self-test result (0:pass 1:fail)
- * bit5: GZ Self-test result (0:pass 1:fail)
- * bit6: Accel self-cal status (0:Done 1:InProgress 2:Error)
- * bit7: Gyro self-cal status (0:Done 1:InProgress 2:Error)
- */
-#define EDMP_STC_RESULTS                                        0x44
-#define EDMP_STC_RESULTS_SIZE                                   4
-
-/* stc_accel_sc_nout_meas_x
- *
- * Accel measurements for X axis in s32.16 for accel self-cal
- */
-#define EDMP_STC_ACCEL_SC_NOUT_MEAS_X                           0x48
-#define EDMP_STC_ACCEL_SC_NOUT_MEAS_X_SIZE                      4
-
-/* stc_accel_sc_nout_meas_y
- *
- * Accel measurements for Y axis in s32.16 for accel self-cal
- */
-#define EDMP_STC_ACCEL_SC_NOUT_MEAS_Y                           0x4c
-#define EDMP_STC_ACCEL_SC_NOUT_MEAS_Y_SIZE                      4
-
-/* stc_accel_sc_nout1_meas_z
- *
- * Accel measurements for Z axis in s32.16 for accel self-cal
- */
-#define EDMP_STC_ACCEL_SC_NOUT1_MEAS_Z                          0x50
-#define EDMP_STC_ACCEL_SC_NOUT1_MEAS_Z_SIZE                     4
-
-/* stc_accel_sc_nout2_meas_z
- *
- * Accel measurements for Z axis in s32.16 for accel self-cal
- */
-#define EDMP_STC_ACCEL_SC_NOUT2_MEAS_Z                          0x5c
-#define EDMP_STC_ACCEL_SC_NOUT2_MEAS_Z_SIZE                     4
-
-/* stc_accel_sc_cmos_meas_x
- *
- * Accel measurements for X axis in s32.16 for accel self-cal
- */
-#define EDMP_STC_ACCEL_SC_CMOS_MEAS_X                           0x54
-#define EDMP_STC_ACCEL_SC_CMOS_MEAS_X_SIZE                      4
-
-/* stc_gain_gx
- *
- * Gyro measurements for X axis in s32.16 for gyro self-test and gyro self-cal by SC2V+ADC Gain
- */
-#define EDMP_STC_GAIN_GX                                        0x60
-#define EDMP_STC_GAIN_GX_SIZE                                   4
-
-/* stc_gain_gy
- *
- * Gyro measurements for Y axis in s32.16 for gyro self-test and gyro self-cal by SC2V+ADC Gain
- */
-#define EDMP_STC_GAIN_GY                                        0x64
-#define EDMP_STC_GAIN_GY_SIZE                                   4
-
-/* stc_gain_gz
- *
- * Gyro measurements for Z axis in s32.16 for gyro self-test and gyro self-cal by SC2V+ADC Gain
- */
-#define EDMP_STC_GAIN_GZ                                        0x68
-#define EDMP_STC_GAIN_GZ_SIZE                                   4
-
-/* stc_configParams
- *
- * Self-test and self-cal input parameters
- * bit0: If set, enable self-test/self-cal init, must be set when any of accel or gyro self-test/self-cal enable bit is set (bits 4:1)
- * bit1: If set, enable accel self-test 
- * bit2: If set, enable gyro self-test
- * bit3: If set, enable accel self-cal  
- * bit4: If set, enable gyro self-cal
- * bit5: Method used to calculate the gyro calibration (0 for Step-response, 1 for SC2V+ADC Gain)
- * bit6: If set, enable SSOM for self-cal
- * bit7~9: Averaging time used to perform self-test (0/1/2/3/4/5: 10/20/40/80/160/320 ms)
- * bit10~12: Tolerance between factory trim and accel self-test response (0/1/2/3/4/5/6/7: 5/10/15/20/25/30/40/50%)
- * bit13~15: Tolerance between factory trim and gyro self-test response (0/1/2/3/4/5/6/7: 5/10/15/20/25/30/40/50%)
- */
-#define EDMP_STC_CONFIGPARAMS                                   0x38
-#define EDMP_STC_CONFIGPARAMS_SIZE                              4
-
-/* stc_patch_en
- *
- * Mechanism for enabling patches execution in SRAM for self-test/self-cal operations
- * bit0: If set, enable SRAM patching for accel self-test phase 1
- * bit1: If set, enable SRAM patching for accel self-test phase 2
- * bit2: If set, enable SRAM patching for gyro self-test phase 1
- * bit3: If set, enable SRAM patching for gyro self-test phase 2
- * bit4: If set, enable SRAM patching for accel self-cal ax_mems
- * bit5: If set, enable SRAM patching for accel self-cal ax_cmos
- * bit6: If set, enable SRAM patching for accel self-cal ay_mems
- * bit7: If set, enable SRAM patching for accel self-cal ay_cmos
- * bit8: If set, enable SRAM patching for accel self-cal az_mems
- * bit9: If set, enable SRAM patching for accel self-cal az_cmos
- * bit10: If set, enable SRAM patching for gyro self-cal phase 1
- * bit11: If set, enable SRAM patching for gyro self-cal phase 2
- */
-#define EDMP_STC_PATCH_EN                                       0x3c
-#define EDMP_STC_PATCH_EN_SIZE                                  4
-
-/* gyro_x_str_ft
- *
- * Self-test response for gyro X axis
- */
-#define EDMP_GYRO_X_STR_FT                                      0x0
-#define EDMP_GYRO_X_STR_FT_SIZE                                 2
-
-/* gyro_y_str_ft
- *
- * Self-test response for gyro Y axis
- */
-#define EDMP_GYRO_Y_STR_FT                                      0x2
-#define EDMP_GYRO_Y_STR_FT_SIZE                                 2
-
-/* gyro_z_str_ft
- *
- * Self-test response for gyro Z axis
- */
-#define EDMP_GYRO_Z_STR_FT                                      0x4
-#define EDMP_GYRO_Z_STR_FT_SIZE                                 2
-
-/* gyro_x_cmos_gain_ft
- *
- * Gyro X axis SC2V+ADC gain measurement result
- */
-#define EDMP_GYRO_X_CMOS_GAIN_FT                                0x6
-#define EDMP_GYRO_X_CMOS_GAIN_FT_SIZE                           2
-
-/* gyro_y_cmos_gain_ft
- *
- * Gyro Y axis SC2V+ADC gain measurement result
- */
-#define EDMP_GYRO_Y_CMOS_GAIN_FT                                0x8
-#define EDMP_GYRO_Y_CMOS_GAIN_FT_SIZE                           2
-
-/* gyro_z_cmos_gain_ft
- *
- * Gyro Z axis SC2V+ADC gain measurement result
- */
-#define EDMP_GYRO_Z_CMOS_GAIN_FT                                0xa
-#define EDMP_GYRO_Z_CMOS_GAIN_FT_SIZE                           2
-
-/* accel_x_sc_nout_ft
- *
- * Accel X factory Nout measurement for sensitivity calibration
- */
-#define EDMP_ACCEL_X_SC_NOUT_FT                                 0x12
-#define EDMP_ACCEL_X_SC_NOUT_FT_SIZE                            2
-
-/* accel_y_sc_nout_ft
- *
- * Accel Y factory Nout measurement for sensitivity calibration
- */
-#define EDMP_ACCEL_Y_SC_NOUT_FT                                 0x14
-#define EDMP_ACCEL_Y_SC_NOUT_FT_SIZE                            2
-
-/* accel_z_sc_nout_ft
- *
- * Accel Z factory Nout measurement for sensitivity calibration
- */
-#define EDMP_ACCEL_Z_SC_NOUT_FT                                 0x16
-#define EDMP_ACCEL_Z_SC_NOUT_FT_SIZE                            2
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // __INV_IMU_EDMP_MEMMAP_H__
+#endif // __INV_IMU_EDMP_APEX_MEMMAP_H__
