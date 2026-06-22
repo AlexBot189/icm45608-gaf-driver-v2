@@ -685,6 +685,23 @@ int inv_mpu_gaf_init(struct inv_mpu_state *st, int mag_enabled)
 			inv_ireg_read(st, REG_I2CM_COMMAND_1_IPREG_TOP1, 1, &cmd1);
 			pr_info("GAF_DBG: I2CM dp=[0x%02x,0x%02x] wr=[0x%02x,0x%02x] cmd1=0x%02x (expect dp=[06,1e] wr=[04,02] cmd1=82)\n",
 				dp0, dp1, wd0, wd1, cmd1);
+			/* Check RCOSC clock: bit1=1 needed for I2CM */
+			{
+				u8 misc1;
+				inv_plat_read(st, REG_REG_MISC1_DREG_BANK1, 1, &misc1);
+				pr_info("GAF_DBG: MISC1=0x%02x (RCOSC=%d)
+", misc1, !!(misc1 & 0x02));
+			}
+			/* Check I2CM_STATUS for errors */
+			{
+				u8 sts;
+				inv_ireg_read(st, REG_I2CM_STATUS_IPREG_TOP1, 1, &sts);
+				pr_info("GAF_DBG: I2CM_STATUS=0x%02x (busy=%d to=%d srst=%d scl=%d sda=%d)
+",
+					sts,
+					!!(sts & 0x01), !!(sts & 0x04),
+					!!(sts & 0x08), !!(sts & 0x10), !!(sts & 0x20));
+			}
 			/* Re-verify ICT1531x is still alive by reading WHOAMI via I2CM */
 			{
 				int r;
