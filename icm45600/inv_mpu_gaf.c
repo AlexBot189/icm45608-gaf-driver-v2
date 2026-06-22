@@ -674,6 +674,51 @@ int inv_mpu_gaf_init(struct inv_mpu_state *st, int mag_enabled)
 		st->chip_config.gaf_enabled = 1;
 		pr_info("GAF: enabled successfully (%d-axis)\n",
 			mag_enabled ? 9 : 6);
+
+		/* DEBUG: verify I2CM profile intact for eDMP autonomous mag read */
+		{
+			u8 dp0, dp1, wd0, wd1, cmd1, who;
+			inv_ireg_read(st, REG_I2CM_DEV_PROFILE0_IPREG_TOP1, 1, &dp0);
+			inv_ireg_read(st, REG_I2CM_DEV_PROFILE1_IPREG_TOP1, 1, &dp1);
+			inv_ireg_read(st, REG_I2CM_WR_DATA0_IPREG_TOP1, 1, &wd0);
+			inv_ireg_read(st, REG_I2CM_WR_DATA1_IPREG_TOP1, 1, &wd1);
+			inv_ireg_read(st, REG_I2CM_COMMAND_1_IPREG_TOP1, 1, &cmd1);
+			pr_info("GAF_DBG: I2CM dp=[0x%02x,0x%02x] wr=[0x%02x,0x%02x] cmd1=0x%02x (expect dp=[06,1e] wr=[04,02] cmd1=82)\n",
+				dp0, dp1, wd0, wd1, cmd1);
+			/* Re-verify ICT1531x is still alive by reading WHOAMI via I2CM */
+			{
+				int r;
+				u8 i2cm_cmd;
+				/* Configure I2CM: read 1 byte from reg 0x01 (CHIP_ID) at addr 0x1E */
+				inv_ireg_write(st, REG_I2CM_DEV_PROFILE0_IPREG_TOP1, 1,
+					(u8[]){0x01});
+				inv_ireg_write(st, REG_I2CM_DEV_PROFILE1_IPREG_TOP1, 1,
+					(u8[]){0x1E});
+				i2cm_cmd = 0x80 | 0x00 | 0x10 | 0x01; /* end=1,ch=0,rd,burst=1 */
+				inv_ireg_write(st, REG_I2CM_COMMAND_0_IPREG_TOP1, 1, &i2cm_cmd);
+				/* Start I2CM */
+				{
+					u8 ctrl;
+					inv_ireg_read(st, REG_I2CM_CONTROL_IPREG_TOP1, 1, &ctrl);
+					ctrl |= REG_I2CM_CONTROL_I2CM_GO_MASK;
+					ctrl &= ~REG_I2CM_CONTROL_I2CM_SPEED_MASK;
+					inv_ireg_write(st, REG_I2CM_CONTROL_IPREG_TOP1, 1, &ctrl);
+				}
+				/* Wait */
+				r = 0;
+				{
+					int to = 100;
+					u8 sts;
+					while (to--) {
+						usleep_range(100, 200);
+						inv_plat_read(st, REG_INT1_STATUS1_DREG_BANK1, 1, &sts);
+						if (sts & 0x20) break; /* I2CM_DONE */
+					}
+				}
+				inv_ireg_read(st, REG_I2CM_RD_DATA0_IPREG_TOP1, 1, &who);
+				pr_info("GAF_DBG: ICT1531x WHOAMI re-read=0x%02x (expect 0x45)\n", who);
+			}
+		}
 	} else {
 		pr_err("GAF: enable failed=%d\n", status);
 	}
