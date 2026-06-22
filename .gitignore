@@ -1,0 +1,17 @@
+*.o
+*.ko
+*.mod
+*.mod.c
+*.order
+*.symvers
+.*.cmd
+*.tmp_versions
+*.a
+*.so
+*.swp
+*.swo
+*~
+modules.order
+Module.symvers
+Mkfile.old
+dkms.conf
