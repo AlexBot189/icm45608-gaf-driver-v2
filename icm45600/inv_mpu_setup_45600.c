@@ -1502,9 +1502,9 @@ int set_inv_enable(struct iio_dev *indio_dev)
 		res = inv_mpu_gaf_init(st, 1);
 		if (res)
 			pr_err("GAF: init failed in enable path=%d\n", res);
+	} else {
+		res = inv_reset_fifo(st, false);
 	}
-
-	res = inv_reset_fifo(st, false);
 	if (res)
 		return res;
 	//inv_dump_debug_reg(st);

@@ -652,7 +652,10 @@ int inv_mpu_gaf_init(struct inv_mpu_state *st, int mag_enabled)
 	}
 	pr_info("GAF: FIFO push started OK\n");
 
-		/* ── Step 8: Enable GAF + eDMP ── */
+	/* ── Step 7.5: Reset FIFO (MCU order: before GAF/eDMP enable) ── */
+	inv_reset_fifo(st, false);
+
+	/* ── Step 8: Enable GAF + eDMP ── */
 	status = inv_mpu_gaf_enable(st);
 	if (!status) {
 		/* Keep STATUS_MASK_PIN_0_7 = 0x3C so eDMP receives ACCEL_DRDY
