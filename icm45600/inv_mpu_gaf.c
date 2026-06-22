@@ -535,6 +535,229 @@ int inv_mpu_gaf_set_config(struct inv_mpu_state *st,
  * If mag_enabled==1, tries to detect ICT1531x magnetometer.
  * Falls back to 6-axis AG mode if mag detection fails.
  */
+/*
+ * inv_mpu_gaf_v2_dump.c — Comprehensive register dump for I2CM/mag debugging
+ *
+ * Append this function to inv_mpu_gaf.c, call as:
+ *   gaf_dump_i2cm_state(st);
+ * right after the GAF enable block in inv_mpu_gaf_init().
+ */
+
+static void gaf_dump_i2cm_state(struct inv_mpu_state *st)
+{
+	u8 d;
+
+	pr_info("======== GAF I2CM/MAG REGISTER DUMP ========\n");
+
+	/* ── IOC_PAD ── */
+	inv_plat_read(st, REG_IOC_PAD_SCENARIO_AUX_OVRD_DREG_BANK1, 1, &d);
+	pr_info("GAF_DBG: IOC_PAD_AUX_OVRD(0x30)=0x%02x "
+		"(aux1_en=%d mode_ovrd=%d mode=%d)\n",
+		d, !!(d & 0x01), !!(d & 0x10), (d >> 2) & 3);
+
+	/* ── MISC1 (clock) ── */
+	inv_plat_read(st, REG_REG_MISC1_DREG_BANK1, 1, &d);
+	pr_info("GAF_DBG: MISC1(0x35)=0x%02x "
+		"(osc_req: EDOSC=%d RCOSC=%d PLL=%d EXT=%d)\n",
+		d, !!(d & 1), !!(d & 2), !!(d & 4), !!(d & 8));
+
+	/* ── PWR_MGMT0 ── */
+	inv_plat_read(st, REG_PWR_MGMT0_DREG_BANK1, 1, &d);
+	pr_info("GAF_DBG: PWR_MGMT0(0x10)=0x%02x (accel=%d gyro=%d)\n",
+		d, d & 3, (d >> 2) & 3);
+
+	/* ── EDMP_APEX_EN0 ── */
+	inv_plat_read(st, REG_EDMP_APEX_EN0_DREG_BANK1, 1, &d);
+	pr_info("GAF_DBG: EDMP_APEX_EN0(0x29)=0x%02x\n", d);
+
+	/* ── EDMP_APEX_EN1 ── */
+	inv_plat_read(st, REG_EDMP_APEX_EN1_DREG_BANK1, 1, &d);
+	pr_info("GAF_DBG: EDMP_APEX_EN1(0x2A)=0x%02x "
+		"(si=%d gaf=%d pickup=%d edmp=%d)\n",
+		d, !!(d & 0x01), !!(d & 0x10), !!(d & 0x20), !!(d & 0x40));
+
+	/* ── DMP_EXT_SEN_ODR_CFG ── */
+	inv_plat_read(st, REG_DMP_EXT_SEN_ODR_CFG_DREG_BANK1, 1, &d);
+	pr_info("GAF_DBG: DMP_EXT_SEN_ODR_CFG(0x27)=0x%02x "
+		"(apex_odr=%d ext_odr=%d ext_en=%d)\n",
+		d, d & 7, (d >> 3) & 7, !!(d & 0x40));
+
+	/* ── FIFO_CONFIG3 ── */
+	inv_plat_read(st, REG_FIFO_CONFIG3_DREG_BANK1, 1, &d);
+	pr_info("GAF_DBG: FIFO_CONFIG3(0x69)=0x%02x "
+		"(acc=%d gyr=%d hires=%d es0=%d es1=%d fifo_en=%d)\n",
+		d, !!(d & 1), !!(d & 2), !!(d & 4), !!(d & 8), !!(d & 0x10), !!(d & 0x40));
+
+	/* ── FIFO_CONFIG4 ── */
+	inv_plat_read(st, REG_FIFO_CONFIG4_DREG_BANK1, 1, &d);
+	pr_info("GAF_DBG: FIFO_CONFIG4(0x6A)=0x%02x (es0_9B=%d)\n",
+		d, !!(d & 1));
+
+	/* ── STATUS_MASK_PIN_0_7 (EDMP INT0) ── */
+	inv_ireg_read(st, REG_STATUS_MASK_PIN_0_7_IPREG_TOP1, 1, &d);
+	pr_info("GAF_DBG: STATUS_MASK_PIN_0_7(0xA271)=0x%02x "
+		"(accel_drdy=%d on_demand=%d)\n",
+		d, !!(d & 1), !!(d & 0x20));
+
+	/* ── STATUS_MASK_PIN_8_15 (EDMP INT1) ── */
+	inv_ireg_read(st, REG_STATUS_MASK_PIN_8_15_IPREG_TOP1, 1, &d);
+	pr_info("GAF_DBG: STATUS_MASK_PIN_8_15(0xA272)=0x%02x\n", d);
+
+	/* ── HOST_MSG ── */
+	inv_plat_read(st, REG_REG_HOST_MSG_DREG_BANK1, 1, &d);
+	pr_info("GAF_DBG: HOST_MSG(0x2B)=0x%02x (on_demand=%d test=%d)\n",
+		d, !!(d & 0x40), !!(d & 0x20));
+
+	/* ═══════════════════════════════════════════
+	 * I2CM CONFIGURATION
+	 * ═══════════════════════════════════════════ */
+
+	/* I2CM_CONTROL */
+	inv_ireg_read(st, REG_I2CM_CONTROL_IPREG_TOP1, 1, &d);
+	pr_info("GAF_DBG: I2CM_CTRL(0xA216)=0x%02x (go=%d speed=%d restart=%d)\n",
+		d, !!(d & 1), !!(d & 0x08), !!(d & 0x40));
+
+	/* I2CM_STATUS */
+	inv_ireg_read(st, REG_I2CM_STATUS_IPREG_TOP1, 1, &d);
+	pr_info("GAF_DBG: I2CM_STATUS(0xA218)=0x%02x "
+		"(busy=%d done=%d to=%d srst=%d scl=%d sda=%d)\n",
+		d,
+		!!(d & 0x01), !!(d & 0x02),
+		!!(d & 0x04), !!(d & 0x08),
+		!!(d & 0x10), !!(d & 0x20));
+
+	/* I2CM EXT_DEV_STATUS */
+	inv_ireg_read(st, REG_I2CM_EXT_DEV_STATUS_IPREG_TOP1, 1, &d);
+	pr_info("GAF_DBG: I2CM_EXT_DEV(0xA21A)=0x%02x\n", d);
+
+	/* I2CM DEV_PROFILE[0..3] */
+	inv_ireg_read(st, REG_I2CM_DEV_PROFILE0_IPREG_TOP1, 1, &d);
+	pr_info("GAF_DBG: I2CM DEV_PROF0(0xA20E)=0x%02x (expect 0x06=STATUS_REG)\n", d);
+	inv_ireg_read(st, REG_I2CM_DEV_PROFILE1_IPREG_TOP1, 1, &d);
+	pr_info("GAF_DBG: I2CM DEV_PROF1(0xA20F)=0x%02x (expect 0x1E=I2C_ADDR)\n", d);
+	inv_ireg_read(st, REG_I2CM_DEV_PROFILE2_IPREG_TOP1, 1, &d);
+	pr_info("GAF_DBG: I2CM DEV_PROF2(0xA210)=0x%02x\n", d);
+	inv_ireg_read(st, REG_I2CM_DEV_PROFILE3_IPREG_TOP1, 1, &d);
+	pr_info("GAF_DBG: I2CM DEV_PROF3(0xA211)=0x%02x\n", d);
+
+	/* I2CM WR_DATA[0..5] */
+	inv_ireg_read(st, REG_I2CM_WR_DATA0_IPREG_TOP1, 1, &d);
+	pr_info("GAF_DBG: I2CM WR_DATA0(0xA233)=0x%02x (expect 0x04)\n", d);
+	inv_ireg_read(st, REG_I2CM_WR_DATA1_IPREG_TOP1, 1, &d);
+	pr_info("GAF_DBG: I2CM WR_DATA1(0xA234)=0x%02x (expect 0x02)\n", d);
+	inv_ireg_read(st, REG_I2CM_WR_DATA2_IPREG_TOP1, 1, &d);
+	pr_info("GAF_DBG: I2CM WR_DATA2(0xA235)=0x%02x (expect 0x04)\n", d);
+	inv_ireg_read(st, REG_I2CM_WR_DATA3_IPREG_TOP1, 1, &d);
+	pr_info("GAF_DBG: I2CM WR_DATA3(0xA236)=0x%02x (expect 0x00)\n", d);
+
+	/* I2CM COMMAND[0..3] */
+	inv_ireg_read(st, REG_I2CM_COMMAND_0_IPREG_TOP1, 1, &d);
+	pr_info("GAF_DBG: I2CM CMD0(0xA206)=0x%02x"
+		" (end=%d ch=%d rw=%d len=%d)\n",
+		d, !!(d & 0x80), !!(d & 0x40), (d>>4)&3, d & 0x0F);
+	inv_ireg_read(st, REG_I2CM_COMMAND_1_IPREG_TOP1, 1, &d);
+	pr_info("GAF_DBG: I2CM CMD1(0xA207)=0x%02x"
+		" (end=%d ch=%d rw=%d len=%d expect 0x82)\n",
+		d, !!(d & 0x80), !!(d & 0x40), (d>>4)&3, d & 0x0F);
+
+	/* ═══════════════════════════════════════════
+	 * ICT1531x register reads via I2CM
+	 * (verify mag is reachable and responding)
+	 * ═══════════════════════════════════════════ */
+
+	/* Helper: do a 1-byte I2CM read from ICT1531x */
+#define ICT1531X_I2C_ADDR    0x1E
+#define ICT1531X_CHIP_ID_REG 0x01
+#define ICT1531X_STATUS_REG  0x06
+
+	/* Read CHIP_ID (WHOAMI) */
+	{
+		u8 who, ctrl;
+		u8 cmd = 0x80 | 0x00 | 0x10 | 0x01; /* end,ch0,rd,len=1 */
+		inv_ireg_single_write(st, REG_I2CM_DEV_PROFILE0_IPREG_TOP1,
+			ICT1531X_CHIP_ID_REG);
+		inv_ireg_single_write(st, REG_I2CM_DEV_PROFILE1_IPREG_TOP1,
+			ICT1531X_I2C_ADDR);
+		inv_ireg_single_write(st, REG_I2CM_COMMAND_0_IPREG_TOP1, cmd);
+		inv_ireg_read(st, REG_I2CM_CONTROL_IPREG_TOP1, 1, &ctrl);
+		ctrl |= REG_I2CM_CONTROL_I2CM_GO_MASK;
+		ctrl &= ~REG_I2CM_CONTROL_I2CM_SPEED_MASK;
+		inv_ireg_single_write(st, REG_I2CM_CONTROL_IPREG_TOP1, ctrl);
+		{
+			u8 sts; int to = 100;
+			do { usleep_range(100,200);
+			     inv_plat_read(st, REG_INT1_STATUS1_DREG_BANK1, 1, &sts);
+			} while (--to && !(sts & 0x20));
+		}
+		inv_ireg_read(st, REG_I2CM_RD_DATA0_IPREG_TOP1, 1, &who);
+		inv_ireg_read(st, REG_I2CM_STATUS_IPREG_TOP1, 1, &ctrl);
+		pr_info("GAF_DBG: ICT1531x CHIP_ID(0x01)=0x%02x (expect 0x45) "
+			"i2cm_sts=0x%02x\n", who, ctrl);
+	}
+
+	/* Read STATUS_REG + FRAME_CNT */
+	{
+		u8 buf[2], ctrl;
+		u8 cmd = 0x80 | 0x00 | 0x10 | 0x02; /* end,ch0,rd,len=2 */
+		inv_ireg_single_write(st, REG_I2CM_DEV_PROFILE0_IPREG_TOP1,
+			ICT1531X_STATUS_REG);
+		inv_ireg_single_write(st, REG_I2CM_DEV_PROFILE1_IPREG_TOP1,
+			ICT1531X_I2C_ADDR);
+		inv_ireg_single_write(st, REG_I2CM_COMMAND_0_IPREG_TOP1, cmd);
+		inv_ireg_read(st, REG_I2CM_CONTROL_IPREG_TOP1, 1, &ctrl);
+		ctrl |= REG_I2CM_CONTROL_I2CM_GO_MASK;
+		ctrl &= ~REG_I2CM_CONTROL_I2CM_SPEED_MASK;
+		inv_ireg_single_write(st, REG_I2CM_CONTROL_IPREG_TOP1, ctrl);
+		{
+			u8 sts; int to = 100;
+			do { usleep_range(100,200);
+			     inv_plat_read(st, REG_INT1_STATUS1_DREG_BANK1, 1, &sts);
+			} while (--to && !(sts & 0x20));
+		}
+		inv_ireg_read(st, REG_I2CM_RD_DATA0_IPREG_TOP1, 2, buf);
+		pr_info("GAF_DBG: ICT1531x STATUS(0x06)=0x%02x FRAME_CNT=0x%02x "
+			"(expect STATUS.bit0=1 data_ready)\n", buf[0], buf[1]);
+	}
+
+	/* Read full 9-byte mag data block (STATUS through MAG_Z MSB) */
+	{
+		u8 buf[10], ctrl;
+		u8 cmd = 0x80 | 0x00 | 0x10 | 0x0A; /* end,ch0,rd,len=10 */
+		inv_ireg_single_write(st, REG_I2CM_DEV_PROFILE0_IPREG_TOP1,
+			ICT1531X_STATUS_REG);
+		inv_ireg_single_write(st, REG_I2CM_DEV_PROFILE1_IPREG_TOP1,
+			ICT1531X_I2C_ADDR);
+		inv_ireg_single_write(st, REG_I2CM_COMMAND_0_IPREG_TOP1, cmd);
+		inv_ireg_read(st, REG_I2CM_CONTROL_IPREG_TOP1, 1, &ctrl);
+		ctrl |= REG_I2CM_CONTROL_I2CM_GO_MASK;
+		ctrl &= ~REG_I2CM_CONTROL_I2CM_SPEED_MASK;
+		inv_ireg_single_write(st, REG_I2CM_CONTROL_IPREG_TOP1, ctrl);
+		{
+			u8 sts; int to = 100;
+			do { usleep_range(100,200);
+			     inv_plat_read(st, REG_INT1_STATUS1_DREG_BANK1, 1, &sts);
+			} while (--to && !(sts & 0x20));
+		}
+		inv_ireg_read(st, REG_I2CM_RD_DATA0_IPREG_TOP1, 10, buf);
+		pr_info("GAF_DBG: ICT1531x FULL_READ: "
+			"sts=%02x fcnt=%02x "
+			"temp=%02x%02x "
+			"mag_x=%02x%02x y=%02x%02x z=%02x%02x "
+			"[raw: %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x]\n",
+			buf[0], buf[1],
+			buf[2], buf[3],
+			buf[4], buf[5], buf[6], buf[7], buf[8], buf[9],
+			buf[0], buf[1], buf[2], buf[3], buf[4],
+			buf[5], buf[6], buf[7], buf[8], buf[9]);
+	}
+
+	pr_info("======== END GAF I2CM/MAG DUMP ========\n");
+
+#undef ICT1531X_I2C_ADDR
+#undef ICT1531X_CHIP_ID_REG
+#undef ICT1531X_STATUS_REG
+}
+
 int inv_mpu_gaf_init(struct inv_mpu_state *st, int mag_enabled)
 {
 	pr_info("GAF: init start (mag=%d)\n", mag_enabled);
@@ -675,67 +898,8 @@ int inv_mpu_gaf_init(struct inv_mpu_state *st, int mag_enabled)
 		pr_info("GAF: enabled successfully (%d-axis)\n",
 			mag_enabled ? 9 : 6);
 
-		/* DEBUG: verify I2CM profile intact for eDMP autonomous mag read */
-		{
-			u8 dp0, dp1, wd0, wd1, cmd1, who;
-			inv_ireg_read(st, REG_I2CM_DEV_PROFILE0_IPREG_TOP1, 1, &dp0);
-			inv_ireg_read(st, REG_I2CM_DEV_PROFILE1_IPREG_TOP1, 1, &dp1);
-			inv_ireg_read(st, REG_I2CM_WR_DATA0_IPREG_TOP1, 1, &wd0);
-			inv_ireg_read(st, REG_I2CM_WR_DATA1_IPREG_TOP1, 1, &wd1);
-			inv_ireg_read(st, REG_I2CM_COMMAND_1_IPREG_TOP1, 1, &cmd1);
-			pr_info("GAF_DBG: I2CM dp=[0x%02x,0x%02x] wr=[0x%02x,0x%02x] cmd1=0x%02x (expect dp=[06,1e] wr=[04,02] cmd1=82)\n",
-				dp0, dp1, wd0, wd1, cmd1);
-			/* Check RCOSC clock: bit1=1 needed for I2CM */
-			{
-				u8 misc1;
-				inv_plat_read(st, REG_REG_MISC1_DREG_BANK1, 1, &misc1);
-				pr_info("GAF_DBG: MISC1=0x%02x (RCOSC=%d)
-", misc1, !!(misc1 & 0x02));
-			}
-			/* Check I2CM_STATUS for errors */
-			{
-				u8 sts;
-				inv_ireg_read(st, REG_I2CM_STATUS_IPREG_TOP1, 1, &sts);
-				pr_info("GAF_DBG: I2CM_STATUS=0x%02x (busy=%d to=%d srst=%d scl=%d sda=%d)
-",
-					sts,
-					!!(sts & 0x01), !!(sts & 0x04),
-					!!(sts & 0x08), !!(sts & 0x10), !!(sts & 0x20));
-			}
-			/* Re-verify ICT1531x is still alive by reading WHOAMI via I2CM */
-			{
-				int r;
-				u8 i2cm_cmd;
-				/* Configure I2CM: read 1 byte from reg 0x01 (CHIP_ID) at addr 0x1E */
-				inv_ireg_write(st, REG_I2CM_DEV_PROFILE0_IPREG_TOP1, 1,
-					(u8[]){0x01});
-				inv_ireg_write(st, REG_I2CM_DEV_PROFILE1_IPREG_TOP1, 1,
-					(u8[]){0x1E});
-				i2cm_cmd = 0x80 | 0x00 | 0x10 | 0x01; /* end=1,ch=0,rd,burst=1 */
-				inv_ireg_write(st, REG_I2CM_COMMAND_0_IPREG_TOP1, 1, &i2cm_cmd);
-				/* Start I2CM */
-				{
-					u8 ctrl;
-					inv_ireg_read(st, REG_I2CM_CONTROL_IPREG_TOP1, 1, &ctrl);
-					ctrl |= REG_I2CM_CONTROL_I2CM_GO_MASK;
-					ctrl &= ~REG_I2CM_CONTROL_I2CM_SPEED_MASK;
-					inv_ireg_write(st, REG_I2CM_CONTROL_IPREG_TOP1, 1, &ctrl);
-				}
-				/* Wait */
-				r = 0;
-				{
-					int to = 100;
-					u8 sts;
-					while (to--) {
-						usleep_range(100, 200);
-						inv_plat_read(st, REG_INT1_STATUS1_DREG_BANK1, 1, &sts);
-						if (sts & 0x20) break; /* I2CM_DONE */
-					}
-				}
-				inv_ireg_read(st, REG_I2CM_RD_DATA0_IPREG_TOP1, 1, &who);
-				pr_info("GAF_DBG: ICT1531x WHOAMI re-read=0x%02x (expect 0x45)\n", who);
-			}
-		}
+
+		gaf_dump_i2cm_state(st);
 	} else {
 		pr_err("GAF: enable failed=%d\n", status);
 	}
