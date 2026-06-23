@@ -1431,6 +1431,7 @@ static int inv_determine_engine(struct inv_mpu_state *st)
 
 	st->chip_config.gyro_enable = g_en;
 	st->chip_config.accel_enable = a_en;
+
 	st->chip_config.slave_enable = c_en;
 
 	if (st->eng_info[ENGINE_I2C].running_rate) {
@@ -1473,6 +1474,23 @@ int set_inv_enable(struct iio_dev *indio_dev)
 	 * Must be set before inv_set_rate() so pk_size=32 is configured correctly.
 	 * inv_mpu_gaf_init() called later does the actual hardware init. */
 	st->chip_config.gaf_enabled = 1;
+
+	/* When GAF is on, force slave_enable so:
+	 *  - inv_turn_on_engine() enables I2CM AUX1 (not dis_i2cm_block)
+	 *  - inv_enable_apex_gestures() sets EXT_SENSOR_EN for auto-acquisition
+	 * Without this, 2nd init (rate change, sensor re-enable) leaves
+	 * AUX1 disabled → CHIP_ID=0x00, magnetometer offline.
+	 *
+	 * Also set ENGINE_I2C rate to match GAF mag_dt (50Hz default)
+	 * so inv_enable_apex_gestures() calculates correct I2CM ODR. */
+	if (st->chip_config.gaf_enabled) {
+		st->chip_config.slave_enable = true;
+		if (!st->eng_info[ENGINE_I2C].running_rate)
+			st->eng_info[ENGINE_I2C].running_rate = 50;
+		st->eng_info[ENGINE_I2C].divider =
+			inv_get_actual_duration(st->eng_info[ENGINE_I2C].running_rate)
+			/ 1250000;
+	}
 
 	res = inv_set_rate(st);
 	if (res) {

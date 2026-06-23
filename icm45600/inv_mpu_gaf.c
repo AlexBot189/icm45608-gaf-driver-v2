@@ -792,7 +792,36 @@ int inv_mpu_gaf_init(struct inv_mpu_state *st, int mag_enabled)
 			mag_done = 1;
 		}
 	} else if (mag_enabled) {
-		pr_info("GAF: mag already initialized, skip\n");
+		/* Re-init may have lost AUX1 (dis_i2cm_block in inv_stop_dmp).
+		 * Restore I2CM AUX1 pads and I2CM control to match MCU inv_imu_init_i2cm. */
+		u8 data;
+		pr_info("GAF: mag already initialized, restoring AUX1\n");
+		status = inv_plat_read(st,
+			REG_IOC_PAD_SCENARIO_AUX_OVRD_DREG_BANK1, 1, &data);
+		if (!status) {
+			data |= REG_IOC_PAD_SCENARIO_AUX_OVRD_AUX1_MODE_OVRD_MASK |
+				(1 << REG_IOC_PAD_SCENARIO_AUX_OVRD_AUX1_MODE_OVRD_VAL_POS) |
+				REG_IOC_PAD_SCENARIO_AUX_OVRD_AUX1_ENABLE_OVRD_MASK |
+				REG_IOC_PAD_SCENARIO_AUX_OVRD_AUX1_ENABLE_OVRD_VAL_MASK;
+			inv_plat_single_write(st,
+				REG_IOC_PAD_SCENARIO_AUX_OVRD_DREG_BANK1, data);
+		}
+		/* Also restore I2CM restart + speed bits */
+		status = inv_ireg_read(st, REG_I2CM_CONTROL_IPREG_TOP1, 1, &data);
+		if (!status) {
+			data |= REG_I2CM_CONTROL_I2CM_RESTART_EN_MASK |
+				REG_I2CM_CONTROL_I2CM_SPEED_MASK;
+			inv_ireg_single_write(st, REG_I2CM_CONTROL_IPREG_TOP1, data);
+		}
+	}
+
+	/* ── Step 0.5: Ensure ES0 compass routing enabled for GAF.
+	 * inv_turn_on_engine() writes es0_compass_en=0 when
+	 * SENSOR_COMPASS is off, which would block GAF FIFO output. */
+	if (mag_enabled) {
+		status = inv_ireg_single_write(st, 0xB9 /* es0_compass_en */, 1);
+		if (status)
+			pr_warn("GAF: es0_compass_en set failed=%d\n", status);
 	}
 
 	/* ── Step 1: Set GAF mode (6-axis AG or 9-axis AGM) ── */

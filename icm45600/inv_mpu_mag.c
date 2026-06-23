@@ -398,6 +398,8 @@ int inv_mpu_mag_init(struct inv_mpu_state *st)
 			ICT1531X_MODE_CTRL_REG,
 			ICT1531X_MODE_CTRL_REG_MODE_STANDBY
 		};
+		/* CMD_0: read 9 bytes (STATUS + X/Y/Z + reserved), endflag=0 for auto-cycle */
+		const u8 cmd0 = 0x19; /* (0<<7)|(0<<6)|(1<<4)|(9<<0) = end=0,ch=0,rw=read,len=9 */
 		/* CMD_1: 2-byte write (reg_addr + 1 data byte), endflag=1 */
 		const u8 cmd1 = 0x82;
 
@@ -405,9 +407,11 @@ int inv_mpu_mag_init(struct inv_mpu_state *st)
 			       sizeof(dev_prof), dev_prof);
 		inv_ireg_write(st, REG_I2CM_WR_DATA0_IPREG_TOP1,
 			       sizeof(wrb), wrb);
+		ireg_write_u8(st, REG_I2CM_COMMAND_0_IPREG_TOP1, cmd0);
 		ireg_write_u8(st, REG_I2CM_COMMAND_1_IPREG_TOP1, cmd1);
 
-		pr_info("MAG: I2CM profile written for DMP\n");
+		pr_info("MAG: I2CM profile written for DMP (CMD0=0x%02x CMD1=0x%02x)\n",
+			cmd0, cmd1);
 	}
 
 disable_i2cm_int:
