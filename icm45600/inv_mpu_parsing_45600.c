@@ -163,6 +163,25 @@ static int inv_push_45600_data(struct iio_dev *indio_dev, u8 *dptr)
 		header2.Byte = 0;
 	}
 	pr_debug("header1=%x, header2=%x\n", header.Byte, header2.Byte);
+
+	/* ── GAF FIFO header diagnostic (first 20 packets) ── */
+	{
+		static int hdr_cnt;
+		if (hdr_cnt < 20) {
+			hdr_cnt++;
+			pr_info("FIFO_HDR[%d]: hdr1=0x%02x ext=%d s0=%d s1=%d hdr2=0x%02x es0=%d es1=%d es0v=%d es1v=%d\n",
+				hdr_cnt, header.Byte,
+				header.bits.ext_header,
+				header.bits.s0_bit,
+				header.bits.s1_bit,
+				header2.Byte,
+				header2.bits.es0_en,
+				header2.bits.es1_en,
+				header2.bits.es0_vld,
+				header2.bits.es1_vld);
+		}
+	}
+
 	/* accel data */
 	if (st->sensor[SENSOR_ACCEL].on) {
 		if (header.bits.s0_bit) {
