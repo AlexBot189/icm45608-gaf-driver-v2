@@ -1114,6 +1114,7 @@ int inv_get_pedometer_time(struct inv_mpu_state *st, int *ped);
 int inv_read_pedometer_counter(struct inv_mpu_state *st);
 int inv_dmp_read(struct inv_mpu_state *st, int off, int size, u8 *buf);
 int inv_firmware_load(struct inv_mpu_state *st);
+int inv_check_firmware_load(struct inv_mpu_state *st);
 
 int set_inv_enable(struct iio_dev *indio_dev);
 

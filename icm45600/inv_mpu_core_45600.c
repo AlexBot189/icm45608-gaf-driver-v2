@@ -70,7 +70,7 @@ const char sensor_l_info[][30] = {
 	"SENSOR_L_NUM_MAX",
 };
 
-static int inv_check_firmware_load(struct inv_mpu_state *st)
+int inv_check_firmware_load(struct inv_mpu_state *st)
 {
 	u32 crc;
 	const struct firmware *fw_entry;

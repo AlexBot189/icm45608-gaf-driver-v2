@@ -1485,8 +1485,12 @@ int set_inv_enable(struct iio_dev *indio_dev)
 
 	/* GAF: unconditionally enable FIFO GAF support (ICM-45608 always supports it).
 	 * Must be set before inv_set_rate() so pk_size=32 is configured correctly.
-	 * inv_mpu_gaf_init() called later does the actual hardware init. */
+	 * inv_mpu_gaf_init() called later does the actual hardware init.
+	 *
+	 * Load EDMP firmware before GAF init — it was previously a lazy load
+	 * that only triggered on cat info_firmware_loaded sysfs read. */
 	st->chip_config.gaf_enabled = 1;
+	inv_check_firmware_load(st);
 
 	/* When GAF is on, force slave_enable so:
 	 *  - inv_turn_on_engine() enables I2CM AUX1 (not dis_i2cm_block)
