@@ -345,6 +345,18 @@ static int inv_push_45600_data(struct iio_dev *indio_dev, u8 *dptr)
 				}
 			}
 
+			/* Periodic GAF_INIT_STATUS check (every ~50 packets) */
+			{
+				static int pkt_cnt;
+				pkt_cnt++;
+				if ((pkt_cnt % 50) == 1) {
+					u8 init_st;
+					inv_ireg_read(st, 0x924, 1, &init_st);
+					pr_info("GAF_STAT[pkt#%d]: INIT_STATUS=0x%02x\n",
+						pkt_cnt, init_st);
+				}
+			}
+
 			if (!gaf_ret && gaf_out.frame_complete) {
 				/* ── Debug: print first ~10 fused quaternion samples ── */
 				static int gaf_sample_cnt;

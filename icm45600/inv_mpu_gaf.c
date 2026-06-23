@@ -460,6 +460,17 @@ int inv_mpu_gaf_enable(struct inv_mpu_state *st)
 	}
 	pr_info("GAF: EDMP idle OK after %d ms\n", i * 5 + 5);
 
+	/* Read back GAF_INIT_STATUS to confirm firmware init completed */
+	{
+		u8 init_st;
+		inv_ireg_read(st, 0x924 /* EDMP_GAF_INIT_STATUS */, 1, &init_st);
+		pr_info("GAF: INIT_STATUS=0x%02x (%s)\n",
+			init_st,
+			(init_st == 0) ? "INIT_NOT_STARTED" :
+			(init_st == 1) ? "INIT_IN_PROGRESS" :
+			(init_st == 2) ? "INIT_COMPLETE" : "UNKNOWN");
+	}
+
 	return 0;
 }
 
