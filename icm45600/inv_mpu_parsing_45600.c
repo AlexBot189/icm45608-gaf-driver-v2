@@ -284,6 +284,33 @@ static int inv_push_45600_data(struct iio_dev *indio_dev, u8 *dptr)
 
 			if (!inv_mpu_gaf_decode_fifo(st, es0, es1, &gaf_out) &&
 			    gaf_out.frame_complete) {
+				/* ── Debug: print first ~10 fused quaternion samples ── */
+				static int gaf_sample_cnt;
+				if (gaf_sample_cnt < 10) {
+					gaf_sample_cnt++;
+					if (gaf_out.rv_quat_valid)
+						pr_info("GAF[%d]: RV qw=%+7d qx=%+7d qy=%+7d qz=%+7d (Q14) hdg=%d\n",
+							gaf_sample_cnt,
+							gaf_out.rv_quat_q14[0],
+							gaf_out.rv_quat_q14[1],
+							gaf_out.rv_quat_q14[2],
+							gaf_out.rv_quat_q14[3],
+							gaf_out.rv_heading_q11);
+					else if (gaf_out.grv_quat_valid)
+						pr_info("GAF[%d]: GRV qw=%+7d qx=%+7d qy=%+7d qz=%+7d (Q14)\n",
+							gaf_sample_cnt,
+							gaf_out.grv_quat_q14[0],
+							gaf_out.grv_quat_q14[1],
+							gaf_out.grv_quat_q14[2],
+							gaf_out.grv_quat_q14[3]);
+					if (gaf_out.rmag_valid)
+						pr_info("GAF[%d]: MAG raw x=%+6d y=%+6d z=%+6d\n",
+							gaf_sample_cnt,
+							gaf_out.rmag[0],
+							gaf_out.rmag[1],
+							gaf_out.rmag[2]);
+				}
+
 				/* GRV quaternion: Q14 -> Q30 */
 				if (gaf_out.grv_quat_valid) {
 					quat_q30[0] = (int)gaf_out.grv_quat_q14[0] << 16;
