@@ -153,6 +153,19 @@ static int inv_push_45600_data(struct iio_dev *indio_dev, u8 *dptr)
 
 	d = dptr;
 
+	/* ── FIFO data processing entry (first 10 packets) ── */
+	{
+		static int entry_cnt;
+		if (entry_cnt < 10) {
+			entry_cnt++;
+			pr_info("GAF_FLOW: processing FIFO packet #%d (gaf_en=%d acc_on=%d gyr_on=%d)\n",
+				entry_cnt,
+				st->chip_config.gaf_enabled,
+				st->sensor[SENSOR_ACCEL].on,
+				st->sensor[SENSOR_GYRO].on);
+		}
+	}
+
 	header.Byte = *d;
 	d++;
 	/* check header 2 */
@@ -296,12 +309,14 @@ static int inv_push_45600_data(struct iio_dev *indio_dev, u8 *dptr)
 			int quat_q30[4];
 			int bias_q16[3];
 			u64 gaf_ts;
+			enum inv_mpu_gaf_frame_type ft;
+			int gaf_ret;
 
 			/* ES0 at dptr+14 (9B), ES1 at dptr+23 (6B) */
 			memcpy(es0, dptr + 14, 9);
 			memcpy(es1, dptr + 23, 6);
 
-			/* ── Raw ES0/ES1 hex dump (first 10 packets with vld=0) ── */
+			/* ── Raw ES0/ES1 hex dump (first 10 packets) ── */
 			{
 				static int raw_cnt;
 				if (raw_cnt < 10) {
@@ -313,8 +328,24 @@ static int inv_push_45600_data(struct iio_dev *indio_dev, u8 *dptr)
 				}
 			}
 
-			if (!inv_mpu_gaf_decode_fifo(st, es0, es1, &gaf_out) &&
-			    gaf_out.frame_complete) {
+			gaf_ret = inv_mpu_gaf_decode_fifo(st, es0, es1, &gaf_out);
+			inv_mpu_gaf_get_frame_type(st, es1, &ft);
+
+			/* ── Decode result diagnostic (first 20 decodes) ── */
+			{
+				static int dec_cnt;
+				if (dec_cnt < 20) {
+					dec_cnt++;
+					pr_info("GAF_DEC[%d]: ret=%d ft=%d complete=%d "
+						"rv=%d grv=%d gyb=%d rmag=%d magb=%d\n",
+						dec_cnt, gaf_ret, ft, gaf_out.frame_complete,
+						gaf_out.rv_quat_valid, gaf_out.grv_quat_valid,
+						gaf_out.gyr_bias_valid, gaf_out.rmag_valid,
+						gaf_out.mag_bias_valid);
+				}
+			}
+
+			if (!gaf_ret && gaf_out.frame_complete) {
 				/* ── Debug: print first ~10 fused quaternion samples ── */
 				static int gaf_sample_cnt;
 				if (gaf_sample_cnt < 10) {

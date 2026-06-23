@@ -200,6 +200,19 @@ static int inv_turn_on_fifo(struct inv_mpu_state *st)
 	if (r)
 		return r;
 
+	/* Verify FIFO_CONFIG3 write took effect */
+	{
+		u8 verify;
+		inv_plat_read(st, REG_FIFO_CONFIG3_DREG_BANK1, 1, &verify);
+		pr_info("GAF_FLOW: FIFO_CONFIG3 written=0x%02x readback=0x%02x "
+			"(acc=%d gyr=%d es0=%d es1=%d)\n",
+			fifo_config3, verify,
+			!!(verify & BIT_FIFO_ACCEL_EN),
+			!!(verify & BIT_FIFO_GYRO_EN),
+			!!(verify & BIT_FIFO_ES0_EN),
+			!!(verify & BIT_FIFO_ES1_EN));
+	}
+
 	/* GAF: ES0 must be 9-byte mode */
 	if (st->chip_config.gaf_enabled)
 		inv_plat_single_write(st, REG_FIFO_CONFIG4_DREG_BANK1,
