@@ -301,6 +301,18 @@ static int inv_push_45600_data(struct iio_dev *indio_dev, u8 *dptr)
 			memcpy(es0, dptr + 14, 9);
 			memcpy(es1, dptr + 23, 6);
 
+			/* ── Raw ES0/ES1 hex dump (first 10 packets with vld=0) ── */
+			{
+				static int raw_cnt;
+				if (raw_cnt < 10) {
+					raw_cnt++;
+					pr_info("GAF_RAW[%d]: es0=%02x%02x%02x%02x%02x%02x%02x%02x%02x es1=%02x%02x%02x%02x%02x%02x\n",
+						raw_cnt,
+						es0[0],es0[1],es0[2],es0[3],es0[4],es0[5],es0[6],es0[7],es0[8],
+						es1[0],es1[1],es1[2],es1[3],es1[4],es1[5]);
+				}
+			}
+
 			if (!inv_mpu_gaf_decode_fifo(st, es0, es1, &gaf_out) &&
 			    gaf_out.frame_complete) {
 				/* ── Debug: print first ~10 fused quaternion samples ── */
