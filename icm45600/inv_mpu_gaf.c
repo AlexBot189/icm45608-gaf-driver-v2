@@ -393,7 +393,14 @@ int inv_mpu_gaf_stop_fifo_push(struct inv_mpu_state *st)
 	return status;
 }
 
-/* ─── GAF enable (from MCU inv_imu_edmp.c:1079-1103, 1216-1243) ─── */
+/* ─── GAF enable (from MCU inv_imu_edmp.c:1079-1103, 1216-1243) ───
+ *
+ * CRITICAL: Must match MCU order — GAF_EN must be set while EDMP_ENABLE=0.
+ * The MCU calls: inv_imu_edmp_enable_gaf() (sets only gaf_en)
+ *               THEN inv_imu_edmp_enable() (sets edmp_enable).
+ * If EDMP_ENABLE is already 1 when GAF_EN is written, the firmware
+ * fails to start GAF init → INIT_STATUS stays 0x00.
+ */
 int inv_mpu_gaf_enable(struct inv_mpu_state *st)
 {
 	u8 gaf_init = 0;
@@ -401,12 +408,7 @@ int inv_mpu_gaf_enable(struct inv_mpu_state *st)
 	int i;
 	int status;
 
-	/* Reset GAF init status to force re-initialization with new params */
-	status = gaf_ireg_write(st, EDMP_GAF_INIT_STATUS, 1, &gaf_init);
-	if (status)
-		return status;
-
-	/* Enable GAF in APEX_EN1 */
+	/* Step 1: Read current EDMP_APEX_EN1 */
 	status = inv_plat_read(st, REG_EDMP_APEX_EN1_DREG_BANK1, 1, &value);
 	if (status)
 		return status;
@@ -422,14 +424,37 @@ int inv_mpu_gaf_enable(struct inv_mpu_state *st)
 		return 0;
 	}
 
+	/* Step 2: Disable EDMP first (must be 0 when GAF_EN transitions 0→1) */
+	pr_info("GAF: disabling EDMP before GAF_EN set\n");
+	{
+		u8 no_edmp = value & ~REG_EDMP_APEX_EN1_EDMP_ENABLE_MASK;
+		inv_plat_single_write(st, REG_EDMP_APEX_EN1_DREG_BANK1, no_edmp);
+	}
+
+	/* Step 3: Reset GAF init status */
+	status = gaf_ireg_write(st, EDMP_GAF_INIT_STATUS, 1, &gaf_init);
+	if (status)
+		return status;
+
+	/* Step 4: Set GAF_EN + SI_EN (but NOT EDMP_ENABLE) */
 	value |= REG_EDMP_APEX_EN1_GAF_EN_MASK |
-		 REG_EDMP_APEX_EN1_EDMP_ENABLE_MASK |
 		 REG_EDMP_APEX_EN1_SOFT_HARD_IRON_CORR_EN_MASK;
 	status = inv_plat_single_write(st, REG_EDMP_APEX_EN1_DREG_BANK1, value);
 	if (status)
 		return status;
+	pr_info("GAF: GAF_EN set (EDMP still off)\n");
 
-	/* Unmask DRDY interrupts needed by GAF */
+	/* Step 5: Small delay for GAF firmware to begin loading */
+	usleep_range(1000, 2000);
+
+	/* Step 6: Now enable EDMP (matches MCU inv_imu_edmp_enable order) */
+	value |= REG_EDMP_APEX_EN1_EDMP_ENABLE_MASK;
+	status = inv_plat_single_write(st, REG_EDMP_APEX_EN1_DREG_BANK1, value);
+	if (status)
+		return status;
+	pr_info("GAF: EDMP_ENABLE set after GAF_EN\n");
+
+	/* Step 7: Unmask DRDY interrupts needed by GAF */
 	{
 		u8 host_msg;
 		status = inv_plat_read(st, REG_REG_HOST_MSG_DREG_BANK1, 1, &host_msg);
